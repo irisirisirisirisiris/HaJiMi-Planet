@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🪐 哈基咪星球 🪐</title>
     <style>
         /* ========== 全局樣式 ========== */
@@ -23,289 +23,57 @@
         .select-card .duty { font-size: 11px; color: #7f8c8d; }
 
         /* ========== 開場過場動畫 ========== */
-#screen-transition { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10001; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
-.cushion { width: 250px; height: 100px; background: #8e44ad; border-radius: 50%; position: relative; display: flex; justify-content: center; align-items: center; border: 4px solid #2c3e50; }
+        #screen-transition { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 10001; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #2c3e50; }
+        .cushion { width: 200px; height: 80px; background: #8e44ad; border-radius: 50%; position: relative; display: flex; justify-content: center; align-items: center; border: 4px solid #2c3e50; }
+        .wake-cat { width: 140px; height: 140px; position: absolute; bottom: 20px; opacity: 0; transform: rotate(-90deg); transition: opacity 0.5s; object-fit: contain; filter: drop-shadow(0px 10px 15px rgba(0,0,0,0.2)); }
+        .wake-cat.awake { opacity: 1; animation: jumpTwice 1.5s ease-in-out forwards; }
+        .wake-text { margin-top: 30px; font-size: 22px; opacity: 0; transition: opacity 1s; font-weight: bold; color: #f39c12; }
 
-/* 貓咪預設透明躺平 */
-.wake-cat { 
-    width: 160px;  /* 👈 稍微放大一點 */
-    height: 160px; 
-    position: absolute; 
-    bottom: 20px; 
-    opacity: 0; 
-    transform: rotate(-90deg); 
-    transition: opacity 0.5s; 
-    
-    /* 👇 關鍵！讓圖片等比例縮放，絕對不變形 */
-    object-fit: contain; 
-}
-
-/* 貓咪醒來：變成不透明，並執行「跳兩下」動畫 */
-.wake-cat.awake { 
-    opacity: 1; 
-    animation: jumpTwice 1.5s ease-in-out forwards; 
-}
-
-/* 👇 新增：跳兩下的關鍵幀動畫 */
-@keyframes jumpTwice {
-    0% { transform: translateY(0) scale(1); }
-    20% { transform: translateY(-40px) scale(1.1); } /* 第一跳 */
-    40% { transform: translateY(0) scale(0.9); }
-    60% { transform: translateY(-40px) scale(1.1); } /* 第二跳 */
-    80% { transform: translateY(0) scale(0.9); }
-    100% { transform: translateY(0) scale(1); } /* 落地定格 */
-}
-
-.wake-text { margin-top: 30px; font-size: 20px; opacity: 0; transition: opacity 1s; font-weight: bold; color: #FFD700; }
+        @keyframes jumpTwice {
+            0% { transform: translateY(0) scale(1); }
+            20% { transform: translateY(-40px) scale(1.1); }
+            40% { transform: translateY(0) scale(0.9); }
+            60% { transform: translateY(-40px) scale(1.1); }
+            80% { transform: translateY(0) scale(0.9); }
+            100% { transform: translateY(0) scale(1); }
+        }
+        @keyframes floatIdle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
         /* ========== 遊戲主介面 ========== */
         #game-container { display: none; width: 100vw; height: 100vh; position: relative; }
-        
-        /* 頂部導航與公告 */
-        .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: white; border-bottom: 3px solid #2c3e50; position: relative; z-index: 10; }
+        .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background: white; border-bottom: 3px solid #2c3e50; position: relative; z-index: 10; height: 55px; box-sizing: border-box;}
+        .server-announcement { font-size: 14px; color: #e74c3c; font-weight: bold; }
         .nav-btns button { border: 2px solid #2c3e50; background: white; padding: 5px 10px; margin-left: 5px; font-size: 13px; }
-        .server-announcement { font-size: 12px; color: #e74c3c; font-weight: bold; animation: blink 2s infinite; }
 
         /* 地圖外層（海洋） */
-#map-area { 
-    position: absolute; 
-    top: 65px; 
-    bottom: 0; 
-    left: 0; 
-    right: 0; 
-    overflow: hidden; 
-    cursor: crosshair; 
-    
-    /* 海洋藍底色 */
-    background-color: #a2d9ff;
-    
-    /* 👇 改用更寬、高低起伏更大的 SVG 波浪，並堆疊兩層製造不規則感 */
-    background-image: 
-        url("data:image/svg+xml,%3Csvg width='200' height='40' viewBox='0 0 200 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 20 Q 50 40 100 20 T 200 20' stroke='%23ffffff' stroke-width='3' fill='none' fill-opacity='0.3' stroke-opacity='0.4'/%3E%3C/svg%3E"),
-        url("data:image/svg+xml,%3Csvg width='150' height='30' viewBox='0 0 150 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 15 Q 37.5 0 75 15 T 150 15' stroke='%23ffffff' stroke-width='2' fill='none' fill-opacity='0.2' stroke-opacity='0.3'/%3E%3C/svg%3E");
-    
-    /* 設定兩層波浪的大小與錯位 */
-    background-size: 200px 40px, 150px 30px;
-    background-position: 0 0, 75px 15px; /* 錯位讓它不規則 */
-    
-    /* 讓波浪有流動感 */
-    animation: seaWave 15s linear infinite;
-}
+        #map-area { position: absolute; top: 0; bottom: 0; left: 0; right: 0; overflow: hidden; cursor: crosshair; background-color: #a2d9ff; background-image: url("data:image/svg+xml,%3Csvg width='200' height='40' viewBox='0 0 200 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 20 Q 50 40 100 20 T 200 20' stroke='%23ffffff' stroke-width='3' fill='none' fill-opacity='0.3' stroke-opacity='0.4'/%3E%3C/svg%3E"); background-size: 200px 40px; animation: seaWave 15s linear infinite; }
+        @keyframes seaWave { 0% { background-position: 0 0; } 100% { background-position: 200px 0; } }
 
-/* 👇 波浪動畫，放慢速度並讓兩層不同步 */
-@keyframes seaWave {
-    0% { background-position: 0 0, 75px 15px; }
-    100% { background-position: 200px 0, 225px 15px; }
-}
-
-/* 地圖內層（綠色小島） */
-#map-content { 
-    position: absolute; 
-    /* 👇 把 2000px 改成 4000px，面積直接變 4 倍大！ */
-    width: 4000px; 
-    height: 2000px; 
-    transform-origin: 0 0; 
-    transition: transform 0.2s ease-out; 
-    border: 5px solid #2c3e50; 
-    box-shadow: inset 0 0 20px rgba(44, 62, 80, 0.1);
-    background-color: #e8f5e9; 
-    background-image: radial-gradient(#b2dfdb 2px, transparent 0); 
-} 
+        /* 地圖內層（綠色小島） */
+        #map-content { position: absolute; width: 4000px; height: 4500px; transform-origin: 0 0; transition: transform 0.2s ease-out; border: 5px solid #2c3e50; box-shadow: inset 0 0 20px rgba(44, 62, 80, 0.1); background-color: #e8f5e9; background-image: radial-gradient(#b2dfdb 2px, transparent 0); } 
         
         /* 建築與地板 */
-.building { 
-    position: absolute; 
-    box-sizing: border-box;
-    background-color: transparent; 
-    border: none; 
-    font-weight: bold; 
-    text-align: center; 
-    cursor: pointer; 
-    user-select: none; 
-    display: flex;
-    flex-direction: column; 
-    align-items: center;
-    justify-content: center;
-    
-    /* 👇 外框直接放大到 300x300 */
-    width: 300px; 
-    height: 300px; 
-    padding: 10px;
-    transition: transform 0.2s; 
-}
+        .building { position: absolute; box-sizing: border-box; background-color: transparent; border: none; font-weight: bold; text-align: center; cursor: pointer; user-select: none; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 600px; height: 600px; padding: 20px; transition: transform 0.2s; }
+        .building:hover { transform: scale(1.05) translateY(-8px); }
+        .building-img { width: 440px; height: 440px; background-size: contain; background-position: center; background-repeat: no-repeat; margin-bottom: 20px; }
+        .building-text { font-size: 44px; font-weight: bold; color: #2c3e50; line-height: 1.2; background: rgba(255, 255, 255, 0.8); padding: 10px 20px; border-radius: 12px; text-shadow: 2px 2px 0px white; }
 
-.building:hover { 
-    transform: scale(1.05) translateY(-8px); 
-}
-
-/* 建築圖片 */
-.building-img {
-    /* 👇 圖片直接放大到 220x220 */
-    width: 220px;  
-    height: 220px;
-    background-size: contain;
-    background-position: center;
-    background-repeat: no-repeat;
-    margin-bottom: 15px;
-}
-
-/* 建築文字 */
-.building-text {
-    /* 👇 字體放大到 22px */
-    font-size: 22px; 
-    font-weight: bold;
-    color: #2c3e50;
-    line-height: 1.2;
-    background: rgba(255, 255, 255, 0.8);
-    padding: 5px 12px;
-    border-radius: 8px;
-    text-shadow: 1px 1px 0px white, -1px -1px 0px white, 1px -1px 0px white, -1px 1px 0px white;
-}
-
-.building:hover { background: #e2e7ea; }
-
-        /* 地圖上的貓咪角色 */
-        .cat-avatar { position: absolute; width: 100px; height: 100px; transition: top 0.5s linear, left 0.5s linear, transform 0.3s; cursor: pointer; z-index: 5; display: flex; justify-content: center; align-items: flex-end; }
+        /* 貓咪角色 */
+        .cat-avatar { position: absolute; width: 100px; height: 100px; transition: top 0.5s linear, left 0.5s linear; cursor: pointer; z-index: 5; display: flex; justify-content: center; align-items: flex-end; }
         .cat-img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0px 5px 2px rgba(0,0,0,0.2)); }
-        /* 地圖上的貓咪角色名字 */
-.cat-name-tag { 
-    position: absolute; 
-    top: -20px; 
-    background: rgba(255,255,255,0.9); 
-    border: 1px solid #2c3e50; 
-    border-radius: 10px; 
-    padding: 1px 6px; 
-    font-size: 10px; 
-    font-weight: bold; 
-    white-space: nowrap; 
-    pointer-events: none; 
-    
-    /* 👇 最強防護：不准任何外層的 transform 影響我，永遠保持正向 */
-    transform: none !important; 
-}
+        .cat-name-tag { position: absolute; top: -25px; background: rgba(255,255,255,0.9); border: 1px solid #2c3e50; border-radius: 10px; padding: 2px 8px; font-size: 12px; font-weight: bold; white-space: nowrap; pointer-events: none; transform: none !important; }
+        .facing-right .cat-img { transform: scaleX(-1) !important; }
 
-/* 原圖朝左，所以只有往右時，才把「圖片」反轉，名字絕不影響 */
-.facing-right .cat-img { 
-    transform: scaleX(-1) !important; 
-}
-    
-         /* ========== 貓咪動畫 ========== */
-/* 待機時的微幅呼吸起伏 */
-.is-idle .cat-img { 
-    animation: breathe 2s infinite ease-in-out; 
-}
-
-/* 放大時的精細待機動作：放大並上下彈跳探頭 */
-.is-zoomed .cat-img { 
-    animation: jumpIdle 1.2s infinite ease-in-out !important; 
-    transform-origin: center bottom;
-}
-
-/* 走路時的彈跳 */
-.is-walking .cat-img { 
-    animation: walkBounce 0.3s infinite alternate; 
-}
-
-/* 蹭蹭時的彈跳 */
-.is-petting .cat-img { 
-    animation: petBounce 0.5s ease; 
-}
-
-/* 👇 關鍵幀魔法區 */
-@keyframes floatIdle { 
-    0%, 100% { transform: translateY(0); } 
-    50% { transform: translateY(-10px); } 
-}
-
-/* 呼吸：讓圖片微微放大縮小，像在呼吸 */
-@keyframes breathe { 
-    0%, 100% { transform: scale(1); } 
-    50% { transform: scale(1.04); } 
-}
-
-/* 放大時的探頭：整體變大，並定時往上彈一下 */
-@keyframes jumpIdle { 
-    0%, 100% { transform: translateY(0) scale(1.08); } 
-    50% { transform: translateY(-12px) scale(1.08); } 
-}
-
-/* 走路時：上下顛簸並輕微旋轉 */
-@keyframes walkBounce { 
-    0% { transform: translateY(0) rotate(0deg); } 
-    100% { transform: translateY(-8px) rotate(3deg); } 
-}
-
-/* 蹭蹭時：放大轉圈 */
-@keyframes petBounce { 
-    0% { transform: scale(1) rotate(0deg); } 
-    50% { transform: scale(1.2) rotate(5deg); } 
-    100% { transform: scale(1) rotate(0deg); } 
-}
-
-@keyframes blink { 
-    0%, 100% { opacity: 1; } 
-    50% { opacity: 0.5; } 
-}
-
-        /* ========== 彈出視窗 (Modal) ========== */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; display: none; }
-        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border: 4px solid #2c3e50; border-radius: 8px; padding: 20px; z-index: 1000; width: 350px; max-height: 80vh; overflow-y: auto; box-shadow: 8px 8px 0px #2c3e50; display: none; }
-        .modal h3 { text-align: center; color: #2980b9; border-bottom: 2px solid #2c3e50; padding-bottom: 10px; }
-        .modal-btns { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
-        .modal-btns button { padding: 10px; font-size: 14px; border: 2px solid #2c3e50; background: white; }
-        .modal-btns button.close-btn { background: #e74c3c; color: white; border-color: #c0392b; }
+        /* 縮放按鈕 */
+        .zoom-controls { position: fixed; right: 20px; bottom: 30px; display: flex; flex-direction: column; gap: 10px; z-index: 99999; }
+        .zoom-controls button { width: 40px; height: 40px; font-size: 20px; background: white; border: 2px solid #2c3e50; border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: 2px 2px 0px #2c3e50; }
         
-        /* 聊天室專用 */
-        .chat-container { display: flex; flex-direction: column; height: 300px; }
-        #chat-box { flex: 1; overflow-y: auto; border: 2px solid #2c3e50; padding: 10px; background: #f8f9fa; font-size: 13px; margin-bottom: 10px; }
-        .chat-input-area { display: flex; gap: 5px; }
-        .chat-input-area input { flex: 1; border: 2px solid #2c3e50; padding: 5px; font-family: inherit; }
-        .chat-msg { margin-bottom: 5px; padding: 5px; border-radius: 4px; background: white; border: 1px solid #ddd; }
-        .chat-msg.user { background: #e2e7ea; }
-
-        /* 背包、郵箱、首領面板專用 */
-        .item-list { list-style: none; padding: 0; margin: 0; }
-        .item-list li { border: 2px solid #2c3e50; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; border-radius: 4px; }
-        .item-list li button { padding: 3px 8px; font-size: 12px; background: white; border: 1px solid #2c3e50; }
-        /* ========== 手機版 RWD 響應式優化 ========== */
         @media screen and (max-width: 768px) {
-        .top-nav { flex-direction: column; padding: 5px 10px; gap: 5px; }
-        .nav-btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; }
-        .nav-btns button { margin-left: 0; padding: 5px 8px; font-size: 12px; }
-        .server-announcement { font-size: 11px; text-align: center; width: 100%; }
-    
-        .select-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; width: 95%; padding: 10px; }
-        .select-card img { width: 60px; height: 60px; }
-        .select-card .name { font-size: 14px; }
-    
-        .modal { width: 90%; max-height: 80vh; padding: 15px; }
-         #map-area{ height: calc(100vh - 120px); }
-        .cat-avatar { width: 60px; height: 60px; }
-        .building { font-size: 12px; padding: 6px; }
-}
-
-    /* 手機縮放提示按鈕 (給沒有滾輪的手機用) */
-    .zoom-controls { position: absolute; right: 15px; bottom: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 100; }
-    .zoom-controls button { width: 40px; height: 40px; font-size: 20px; background: white; border: 2px solid #2c3e50; border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: 2px 2px 0px #2c3e50; }
-      /* 原圖朝左，所以只有朝右時才把圖片反轉 */
-.facing-right .cat-img { 
-    transform: scaleX(-1) !important; 
-}
-/* 確保名字永遠是正的，不受影響 */
-.cat-name-tag { 
-    transform: none !important; 
-}
-      /* 只有朝右時，才把「貓咪圖片」反轉，名字絕對不影響 */
-.facing-right .cat-img { 
-    transform: scaleX(-1) !important; 
-}
-        /* ========== 拖曳小遊戲 ========== */
-    #mini-game-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #fdf5e6; z-index: 20000; display: none; flex-direction: column; touch-action: none; user-select: none; }
-    #mini-game-ui { position: absolute; top: 20px; left: 20px; background: rgba(255, 255, 255, 0.8); padding: 10px 20px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); pointer-events: none; }
-    #mini-game-msg { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: #ffb74d; color: white; padding: 10px 20px; border-radius: 10px; font-weight: bold; display: none; }
-    #mini-game-canvas { display: block; width: 100%; height: 100%; }
-    .mini-close-btn { position: absolute; top: 20px; right: 20px; z-index: 10; padding: 8px 15px; background: #e74c3c; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-</style>
+            .top-nav { flex-direction: column; padding: 5px 10px; gap: 5px; }
+            .select-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; width: 95%; padding: 10px; }
+            .modal { width: 90%; }
+        }
+    </style>
 </head>
 <body>
 
@@ -314,12 +82,12 @@
         <h1>🪐 哈基咪星球 🪐</h1>
         <p style="color:#7f8c8d; font-weight:bold;">一個純貓手繪線條烏托邦</p>
         <button class="btn-main" onclick="showSelectScreen()">進入遊戲</button>
-        <p style="font-size: 12px; color: #95a5a6; margin-top: 40px; max-width: 80%; line-height: 1.5;">※ 本遊戲為非商業性個人學習與朋友交流專案，其中貓咪圖片素材版權歸原遊戲原作者所有，如有侵權請告知，將立即移除。</p>
+        <p style="font-size: 12px; color: #95a5a6; margin-top: 40px; max-width: 80%; line-height: 1.5;">※ 本遊戲為非商業性個人學習與朋友交流專案，其中貓咪圖片素材版權歸原遊戲原作者所有。</p>
     </div>
 
     <!-- 2. 選角畫面 -->
     <div id="screen-select" class="hidden">
-        <h2>請選擇你要扮演的貓咪</h2>
+        <h2 id="select-title">請選擇你要扮演的貓咪</h2>
         <div class="select-grid" id="select-grid"></div>
     </div>
 
@@ -333,346 +101,141 @@
 
     <!-- 4. 遊戲主畫面 -->
     <div id="game-container">
-        <!-- 頂部 -->
-        <div class="top-nav">
-            <div class="server-announcement" id="announcement-text">歡迎來到哈基咪星球！</div>
-            <div class="nav-btns">
-                <button onclick="toggleModal('modal-bag')">🎒 背包</button>
-                <button onclick="toggleModal('modal-mail')">📧 郵箱</button>
-                <button onclick="toggleModal('modal-chat')">💬 聊天室</button>
-                <button onclick="toggleModal('modal-friends')">💖 好友列</button>
-                <button onclick="toggleLang()" id="btn-lang">简体中文</button>
-                <button id="admin-btn" class="hidden" onclick="toggleModal('modal-admin')" style="color: #e74c3c; border-color: #e74c3c;">👑 首領面板</button>
-                <button id="officer-btn" class="hidden" onclick="try{ toggleModal('modal-officer'); if(isOfficer) renderOfficerFeedback(); }catch(e){ alert('長官面板加載失敗：' + e.message); }" style="color: #2980b9; border-color: #2980b9;">🎖️ 長官面板</button>
-            </div>
+        <div style="position: absolute; top: 15px; left: 20px; z-index: 100; display: flex; align-items: center; gap: 15px; background: rgba(255,255,255,0.85); padding: 8px 15px; border-radius: 30px; border: 2px solid #2c3e50; box-shadow: 3px 3px 0px #2c3e50;">
+            <div class="server-announcement" id="announcement-text" style="margin: 0; font-size: 14px; color: #e74c3c; font-weight: bold;">歡迎來到哈基咪星球！</div>
+            <button onclick="toggleLang()" id="btn-lang" style="border: 2px solid #2c3e50; background: white; padding: 4px 10px; font-size: 12px; font-weight: bold; border-radius: 20px; cursor: pointer;">简体中文</button>
         </div>
 
-        <!-- 地圖 -->
-        <div id="map-area" onclick="handleMapClick(event)" ondblclick="handleMapDblClick(event)">
-                                                                    <div id="map-content">
-<!-- 第一排 -->
-<div class="building" style="left: 300px; top: 200px;" onclick="openClothingStore(); event.stopPropagation();">
-    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/7f8ITGyO2eJ3gsirpK-Sj.png');"></div>
-    <div class="building-text">服裝店「貓主子要換衫」</div>
-</div>
-<div class="building" style="left: 1800px; top: 200px;" onclick="tryEnterShop('哈基葵', '溫馨家園'); event.stopPropagation();">
-    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/63uMoWk0J2QYo2r8SlEBh.png');"></div>
-    <div class="building-text">溫馨家園「12」</div>
-</div>
-<div class="building" style="left: 3300px; top: 200px;" onclick="tryEnterShop('哈基芝', '奶茶店'); event.stopPropagation();">
-    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/oERg9IzcQ_a2TjRs1Deek.png');"></div>
-    <div class="building-text">奶茶店「喵茶」</div>
-</div>
+        <div id="map-area" onclick="handleMapClick(event)">
+            <div id="map-content">
+                <!-- 第一排 -->
+                <div class="building" style="left: 200px; top: 200px;">
+                    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/7f8ITGyO2eJ3gsirpK-Sj.png');"></div>
+                    <div class="building-text" data-tw="服裝店「貓主子要換衫」" data-cn="服装店「猫主子要换衫」">服裝店「貓主子要換衫」</div>
+                </div>
+                <div class="building" style="left: 1700px; top: 200px;">
+                    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/63uMoWk0J2QYo2r8SlEBh.png');"></div>
+                    <div class="building-text" data-tw="溫馨家園「12」" data-cn="温馨家园「12」">溫馨家園「12」</div>
+                </div>
+                <div class="building" style="left: 3200px; top: 200px;">
+                    <div class="building-img" style="background-image: url('https://i.imgs.ovh/2026/10/20/670e9af00c9efb346c39f9bfe7bc0198.png');"></div>
+                    <div class="building-text" data-tw="奶茶店「喵茶」" data-cn="奶茶店「喵茶」">奶茶店「喵茶」</div>
+                </div>
 
-<!-- 第二排 -->
-<div class="building" style="left: 300px; top: 800px;" onclick="tryEnterShop('哈基桐', '貓畫廊'); event.stopPropagation();">
-    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/pfVMbSE9nMPKCOc5HlEiH.png');"></div>
-    <div class="building-text">貓畫廊「WMG」</div>
-</div>
-<div class="building" style="left: 1800px; top: 800px;" onclick="tryEnterShop('無', '中央廣場'); event.stopPropagation();">
-    <div class="building-img" style="background-image: url('https://m.riyugo.cn/i/2026/10/18/s4hj36.png');"></div>
-    <div class="building-text">中央廣場「水從天上來」</div>
-</div>
-<div class="building" style="left: 3300px; top: 800px;" onclick="tryEnterShop('哈基心', '玩具店'); event.stopPropagation();">
-    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/8j_eqwVGOwEaqZV-WA18N.png');"></div>
-    <div class="building-text">玩具店「玩飽你讓你樂在其中榴槤忘返」</div>
-</div>
+                <!-- 第二排 -->
+                <div class="building" style="left: 200px; top: 1100px;">
+                    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/pfVMbSE9nMPKCOc5HlEiH.png');"></div>
+                    <div class="building-text" data-tw="貓畫廊「WMG」" data-cn="猫画廊「WMG」">貓畫廊「WMG」</div>
+                </div>
+                <div class="building" style="left: 1700px; top: 1100px;">
+                    <div class="building-img" style="background-image: url('https://m.riyugo.cn/i/2026/10/18/s4hj36.png');"></div>
+                    <div class="building-text" data-tw="中央廣場「水從天上來」" data-cn="中央广场「水从天上来」">中央廣場「水從天上來」</div>
+                </div>
+                <div class="building" style="left: 3200px; top: 1100px;">
+                    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/8j_eqwVGOwEaqZV-WA18N.png');"></div>
+                    <div class="building-text" data-tw="玩具店「玩飽你讓你樂在其中榴槤忘返」" data-cn="玩具店「玩饱你让你乐在其中榴莲忘返」">玩具店「玩飽你讓你樂在其中榴槤忘返」</div>
+                </div>
 
-<!-- 第三排 -->
-<div class="building" style="left: 900px; top: 1400px;" onclick="tryEnterShop('哈基悠', '化妝店'); event.stopPropagation();">
-    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/snTtMwh-3ggf7LM0w0qWy.png');"></div>
-    <div class="building-text">化妝店「公主改造社」</div>
-</div>
-<div class="building" style="left: 2700px; top: 1400px;" onclick="tryEnterShop('哈基慈', '書店'); event.stopPropagation();">
-    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/fZLQ5ddwW7n34BHtlLgZo.png');"></div>
-    <div class="building-text">貓咪書店「貓然回首看書」</div>
-</div>
+                <!-- 第三排 -->
+                <div class="building" style="left: 900px; top: 2000px;">
+                    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/snTtMwh-3ggf7LM0w0qWy.png');"></div>
+                    <div class="building-text" data-tw="化妝店「公主改造社」" data-cn="化妆店「公主改造社」">化妝店「公主改造社」</div>
+                </div>
+                <div class="building" style="left: 2500px; top: 2000px;">
+                    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/fZLQ5ddwW7n34BHtlLgZo.png');"></div>
+                    <div class="building-text" data-tw="貓咪書店「貓然回首看書」" data-cn="猫咪书店「猫然回首看书」">貓咪書店「貓然回首看書」</div>
+                </div>
 
-<!-- 第四排 -->
-<div class="building" style="left: 300px; top: 2000px;" onclick="tryEnterShop('哈基一', '咖啡廳'); event.stopPropagation();">
-    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/Vfo7xyeGD2os8ZHnbkhXe.png');"></div>
-    <div class="building-text">咖啡廳「老闆不想煮咖啡」</div>
-</div>
-<div class="building" style="left: 1800px; top: 2000px;" onclick="tryEnterShop('哈基琪', '夾公仔店'); event.stopPropagation();">
-    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/7AOAO6vN7ks-K2XyHeio6.png');"></div>
-    <div class="building-text">夾公仔店「心心夾子」</div>
-</div>
-<div class="building" style="left: 3300px; top: 2000px;" onclick="tryEnterShop('哈基晴', '用品店'); event.stopPropagation();">
-    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/6W4KOIbgcJ9jS2vaYtR9e.png');"></div>
-    <div class="building-text">用品店「M仔严选挑拣纯手工精致精品猫咪用品店」</div>
-</div>
+                <!-- 第四排 -->
+                <div class="building" style="left: 200px; top: 2900px;">
+                    <div class="building-img" style="background-image: url('https://i.imgs.ovh/2026/10/20/4061fc4650d7145cedde971f7b5c8d4f.png');"></div>
+                    <div class="building-text" data-tw="咖啡廳「老闆不想煮咖啡」" data-cn="咖啡厅「老板不想煮咖啡」">咖啡廳「老闆不想煮咖啡」</div>
+                </div>
+                <div class="building" style="left: 1700px; top: 2900px;">
+                    <div class="building-img" style="background-image: url('https://i.imgs.ovh/2026/10/20/b2c84423d9c6ce3bbc496501c810c268.png');"></div>
+                    <div class="building-text" data-tw="夾公仔店「心心夾子」" data-cn="夹公仔店「心心夹子」">夾公仔店「心心夾子」</div>
+                </div>
+                <div class="building" style="left: 3200px; top: 2900px;">
+                    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/6W4KOIbgcJ9jS2vaYtR9e.png');"></div>
+                    <div class="building-text" data-tw="用品店「M仔严选挑拣纯手工精致精品猫咪用品店」" data-cn="用品店「M仔严选挑拣纯手工精致精品猫咪用品店」">用品店「M仔严选挑拣纯手工精致精品猫咪用品店」</div>
+                </div>
 
-<!-- 第五排 (如果要塞滿，可以放在最下面) -->
-<div class="building" style="left: 900px; top: 2500px;" onclick="tryEnterShop('哈基游', '甜品店'); event.stopPropagation();">
-    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/d_r8rDPeHZBM3A9h_xKAx.png');"></div>
-    <div class="building-text">甜品店「一山甜水」</div>
-</div>
-<div class="building" style="left: 2700px; top: 2500px;" onclick="tryEnterShop('哈基姿', '水果店'); event.stopPropagation();">
-    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/u5I9Mw5F3GSl6hW2NjQk6.png');"></div>
-    <div class="building-text">水果店「果然是你」</div>
-</div>
+                <!-- 第五排 -->
+                <div class="building" style="left: 900px; top: 3800px;">
+                    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/d_r8rDPeHZBM3A9h_xKAx.png');"></div>
+                    <div class="building-text" data-tw="甜品店「一山甜水」" data-cn="甜品店「一山甜水」">甜品店「一山甜水」</div>
+                </div>
+                <div class="building" style="left: 2500px; top: 3800px;">
+                    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/u5I9Mw5F3GSl6hW2NjQk6.png');"></div>
+                    <div class="building-text" data-tw="水果店「果然是你」" data-cn="水果店「果然是你」">水果店「果然是你」</div>
+                </div>
             </div>
 
-        <!-- 👇 把按鈕和聲明放在地圖的外面，但在 map-area 裡面 -->
             <div class="zoom-controls">
                 <button onclick="manualZoom(1); event.stopPropagation();">➕</button>
                 <button onclick="manualZoom(-1); event.stopPropagation();">➖</button>
             </div>
-        
-            <div style="position: absolute; bottom: 5px; right: 10px; font-size: 11px; color: rgba(44, 62, 80, 0.4); pointer-events: none; z-index: 9999;">
-                素材版權歸原作者所有，僅供學習交流
-            </div>
-
-        </div> <!-- 這裡是 map-area 的結束 -->
-    </div> <!-- 這裡是 game-container 的結束 -->
-
-    <!-- ========== 彈出視窗區 ========== -->
-
-    <!-- 聊天室 -->
-    <div id="modal-chat" class="modal">
-        <h3>💬 貓咪聊天室</h3>
-        <div class="chat-container">
-            <div id="chat-box"></div>
-            <div class="chat-input-area">
-                <input type="text" id="chat-input" placeholder="輸入訊息..." onkeypress="if(event.key === 'Enter') sendChatMessage()">
-                <button onclick="sendChatMessage()" style="background:white; border:2px solid #2c3e50; padding:5px;">發送</button>
-            </div>
-        </div>
-        <div class="modal-btns"><button class="close-btn" onclick="toggleModal('modal-chat')">關閉</button></div>
-    </div>
-
-    <!-- 背包與衣櫃 -->
-<div id="modal-bag" class="modal" style="width: 400px;">
-    <h3>🎒 我的背包</h3>
-    
-    <!-- 分頁按鈕 -->
-    <div style="display: flex; gap: 5px; margin-bottom: 15px;">
-        <button onclick="switchBagTab('items')" id="tab-btn-items" style="flex: 1; padding: 8px; border: 2px solid #2c3e50; background: #e2e7ea; font-weight: bold;">📦 物品</button>
-        <button onclick="switchBagTab('closet')" id="tab-btn-closet" style="flex: 1; padding: 8px; border: 2px solid #2c3e50; background: white; font-weight: bold;">👗 衣櫃</button>
-    </div>
-
-    <!-- 物品列表 -->
-    <ul class="item-list" id="bag-list"></ul>
-
-    <!-- 衣櫃列表 -->
-    <div id="closet-area" style="display: none;">
-        <p style="font-size:12px; color:#7f8c8d; margin-bottom:10px;">點擊穿戴後，可在地圖上自由拖曳飾品。</p>
-        <ul class="item-list" id="closet-list"></ul>
-    </div>
-
-    <div class="modal-btns"><button class="close-btn" onclick="toggleModal('modal-bag')">關閉</button></div>
-</div>
-
-<!-- 服裝店 (新增) -->
-<div id="modal-store" class="modal">
-    <h3>🏪 服裝店「貓主子要換衫」</h3>
-    <p style="text-align:center; font-size:13px; color:#e67e22; font-weight:bold;">目前擁有：🐟 <span id="store-fish-count">0</span> 個小魚乾</p>
-    <ul class="item-list" id="store-list"></ul>
-    <div class="modal-btns"><button class="close-btn" onclick="toggleModal('modal-store')">離開商店</button></div>
-</div>
-    <!-- 好友列 -->
-<div id="modal-friends" class="modal">
-    <h3>💖 好友好感度</h3>
-    <p style="font-size:12px; color:#7f8c8d; text-align:center;">每天可蹭蹭 2 次、送禮 2 次</p>
-    <ul class="item-list" id="friend-list"></ul>
-    <div class="modal-btns"><button class="close-btn" onclick="toggleModal('modal-friends')">關閉</button></div>
-</div>
-
-    <!-- 郵箱 -->
-    <div id="modal-mail" class="modal">
-        <h3>📧 貓咪郵箱</h3>
-        <ul class="item-list" id="mail-list"></ul>
-        <div class="modal-btns"><button class="close-btn" onclick="toggleModal('modal-mail')">關閉</button></div>
-    </div>
-
-    <!-- 打招呼互動 -->
-    <div id="modal-interact" class="modal">
-        <h3 id="interact-title">與 哈基葵 打招呼</h3>
-        <p style="text-align:center; font-size:12px; color:#7f8c8d;">你們在這裡相遇了，要做些什麼呢？</p>
-        <div class="modal-btns">
-            <button onclick="doInteractAction()">🐾 做動作 (蹭蹭)</button>
-            <button onclick="openGiftPanel()">🎁 送禮物</button>
-            <button class="close-btn" onclick="toggleModal('modal-interact')">關閉</button>
         </div>
     </div>
-
-    <!-- 送禮子選單 -->
-    <div id="modal-gift" class="modal" style="width: 250px;">
-        <h3>選擇禮物</h3>
-        <ul class="item-list" id="gift-list"></ul>
-        <div class="modal-btns"><button class="close-btn" onclick="toggleModal('modal-gift')">取消</button></div>
-    </div>
-
-    <!-- 首領專屬面板 -->
-    <div id="modal-admin" class="modal">
-        <h3>👑 首領·葵貓的專屬後台</h3>
-        <p style="font-size:12px; color:#7f8c8d;">身份驗證通過。言君（哈基一）、何藍豆（哈基游）向您問好。</p>
-        <div style="margin-bottom:15px;">
-            <label style="font-weight:bold; font-size:13px;">發送全服公告：</label><br>
-            <input type="text" id="admin-announce-input" style="width:90%; border:2px solid #2c3e50; padding:5px; margin-top:5px;" placeholder="輸入要廣播的內容...">
-            <button onclick="sendAdminAnnounce()" style="margin-top:5px; border:2px solid #2c3e50; padding:5px 10px; background:white;">發送</button>
-        </div>
-      <div style="margin-bottom:15px; border-top: 1px dashed #2c3e50; padding-top: 15px;">
-            <label style="font-weight:bold; font-size:13px; color: #e74c3c;">🎁 首領特權：無限發放物資</label><br>
-            <div style="display: flex; gap: 5px; margin-top: 8px;">
-                <select id="admin-gift-cat" style="border: 2px solid #2c3e50; padding: 5px; border-radius: 4px; flex: 1; font-family: inherit;"></select>
-                <select id="admin-gift-item" style="border: 2px solid #2c3e50; padding: 5px; border-radius: 4px; flex: 1; font-family: inherit;">
-                    <option value="貓罐頭">貓罐頭</option>
-                    <option value="小魚乾">小魚乾</option>
-                    <option value="毛線球">毛線球</option>
-                    <option value="黃金貓草">黃金貓草</option>
-                </select>
-            </div>
-            <button onclick="sendAdminGift()" style="margin-top: 8px; border: 2px solid #e74c3c; padding: 6px 10px; background: white; color: #e74c3c; width: 100%; border-radius: 4px; font-weight: bold;">🚀 發送禮物至對方郵箱</button>
-        </div>
-      <!-- 👇 新增：首領地圖編輯器 -->
-<div style="margin-bottom:15px; border-top: 1px dashed #2c3e50; padding-top: 15px;">
-    <label style="font-weight:bold; font-size:13px; color: #2980b9;">🗺️ 首領專屬：地圖編輯</label><br>
-    <button onclick="toggleMapEditor()" id="btn-edit-map" style="margin-top: 8px; border: 2px solid #2980b9; padding: 6px 10px; background: white; color: #2980b9; width: 100%; border-radius: 4px; font-weight: bold;">開啟編輯模式</button>
-</div>
-        <div style="margin-bottom:15px; border-top: 1px dashed #2c3e50; padding-top: 15px;">
-    <label style="font-weight:bold; font-size:13px; color: #e67e22;">🐾 首領專屬：貓咪編輯</label><br>
-    <button onclick="toggleCatEditor()" id="btn-edit-cat" style="margin-top: 8px; border: 2px solid #e67e22; padding: 6px 10px; background: white; color: #e67e22; width: 100%; border-radius: 4px; font-weight: bold;">開啟貓咪編輯模式</button>
-        </div>
-        <h4 style="margin:0 0 5px 0;">客服反饋信件：</h4>
-        <ul class="item-list" id="admin-feedback-list" style="max-height:200px; overflow-y:auto;"></ul>
-        <div class="modal-btns"><button class="close-btn" onclick="toggleModal('modal-admin')">關閉</button></div>
-    </div>
-    <!-- 👇 貼在這裡，首領面板結束的下面 -->
-<!-- 長官專屬面板 -->
-<div id="modal-officer" class="modal">
-    <h3>🎖️ 長官專屬面板</h3>
-    <p style="font-size:12px; color:#7f8c8d;">權限：僅能檢視並回覆客服反饋。</p>
-    <ul class="item-list" id="officer-feedback-list" style="max-height:300px; overflow-y:auto;"></ul>
-    <div class="modal-btns"><button class="close-btn" onclick="toggleModal('modal-officer')">關閉</button></div>
-</div>
-    <!-- 遮罩層 -->
-    <!-- 👇 貼在這裡 -->
-<!-- 服裝店打工小遊戲 -->
-<div id="mini-game-overlay">
-    <button class="mini-close-btn" onclick="closeMiniGame()">❌ 離開打工</button>
-    <div id="mini-game-ui">
-        <h3 id="mini-day-title">第一天：佈置店外</h3>
-        <p id="mini-task-text">請將盆栽拖到灰色區域</p>
-    </div>
-    <div id="mini-game-msg">🎉 完成擺放！</div>
-    <canvas id="mini-game-canvas"></canvas>
-</div>
-<!-- 裝修小遊戲視窗 (通用) -->
-<div id="modal-shop-work" class="modal">
-    <h3 id="shop-work-title">🏪 店鋪裝修</h3>
-    <p id="shop-work-desc" style="text-align:center; font-size:13px; color:#7f8c8d;">正在等待店長回來...</p>
-    <div style="text-align: center; margin: 20px 0;">
-        <button id="shop-work-btn" onclick="startMiniGame()" style="display:none; padding: 10px 20px; background: #2ecc71; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; box-shadow: 2px 2px 0px #27ae60;">💼 開始整理店鋪</button>
-    </div>
-    <div class="modal-btns"><button class="close-btn" onclick="toggleModal('modal-shop-work')">離開</button></div>
-</div>
-<div id="modal-overlay" class="modal-overlay" onclick="closeAllModals()"></div>
 
 <script>
     // ==================== 核心數據 ====================
-    // 由於您上傳的圖片無法直接轉換為代碼，這裡我使用變數佔位。
-    // 請將您電腦裡的圖片檔名填入下面的引號中，例如 "hajikui.png"。
-    // 如果留空，系統會顯示帶有黑邊的白色貓咪佔位圖，動畫依然會正常運作。
     const catImages = {
-    "哈基葵": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/Yj_Y1BPlWxF-m0DrK4jXP.png",
-    "哈基芝": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/2Fa1OkeLH_K7ENSqarb9i.png",
-    "哈基游": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/qyrC5kVgSmxkG-VW7URUC.png",
-    "哈基慈": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/rXTpumF_vy5owCjl0pAtz.png",
-    "哈基琪": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/hwP4AaOZS93uQGFWhQO5q.png",
-    "哈基之": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/rSo2XFUnwcoiSqFI_A8_e.png",
-    "哈基一": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/oVfSmNdUjBDOX8ORkxAaO.png",
-    "哈基姿": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/NjFtN4G5NWqAIxxKMSHl5.png",
-    "哈基桐": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/8HwMFDsm3pFIkuyvYQsLF.png",
-    "哈基晴": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/iGQvNqad3Ro3cm5pJjZEl.png",
-    "哈基悠": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/_eraSmF87FzBfL7JVkvY9.png",
-    "哈基心": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/IfGDftaIFwJPXu9tlWIHU.png"
-};
+        "哈基葵": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/Yj_Y1BPlWxF-m0DrK4jXP.png",
+        "哈基芝": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/2Fa1OkeLH_K7ENSqarb9i.png",
+        "哈基游": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/qyrC5kVgSmxkG-VW7URUC.png",
+        "哈基慈": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/rXTpumF_vy5owCjl0pAtz.png",
+        "哈基琪": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/hwP4AaOZS93uQGFWhQO5q.png",
+        "哈基之": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/rSo2XFUnwcoiSqFI_A8_e.png",
+        "哈基一": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/oVfSmNdUjBDOX8ORkxAaO.png",
+        "哈基姿": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/NjFtN4G5NWqAIxxKMSHl5.png",
+        "哈基桐": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/8HwMFDsm3pFIkuyvYQsLF.png",
+        "哈基晴": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/iGQvNqad3Ro3cm5pJjZEl.png",
+        "哈基悠": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/_eraSmF87FzBfL7JVkvY9.png",
+        "哈基心": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/IfGDftaIFwJPXu9tlWIHU.png"
+    };
 
-    // 預設的純 CSS 貓咪圖（SVG Data URI），如果您填入圖片就會被替換
     const defaultCatSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M20,60 Q10,30 30,20 Q50,10 70,20 Q90,30 80,60 Q95,80 80,90 Q50,95 20,90 Q5,80 20,60 Z' fill='white' stroke='%232c3e50' stroke-width='5'/><circle cx='40' cy='50' r='4' fill='%232c3e50'/><circle cx='60' cy='50' r='4' fill='%232c3e50'/><path d='M45,60 Q50,65 55,60' fill='none' stroke='%232c3e50' stroke-width='3'/></svg>";
 
+    // 設定所有貓咪初始出生在溫馨家園附近，並用座標錯開避免重疊
+    const baseX = 1700, baseY = 800; 
     const catsData = {
-"哈基葵": { realName: "葵貓", breed: "布偶貓", duty: "🏡 家園長", duty_cn: "🏡 家园长", isOnline: true, x: 1800, y: 800, facing: "right", diary: [], haqiScore: 0, affection: 20, petCount: 0, giftCount: 0 },
-"哈基芝": { realName: "", breed: "土耳其安哥拉貓", duty: "🍹 奶茶店長", duty_cn: "🍹 奶茶店长", isOnline: true, x: 3300, y: 200, facing: "left", diary: [], haqiScore: 0, affection: 20, petCount: 0, giftCount: 0 },
-"哈基游": { realName: "何藍豆", breed: "三花貓", duty: "🍰 甜品店長", duty_cn: "🍰 甜品店长", isOnline: true, x: 900, y: 2500, facing: "right", diary: [], haqiScore: 0, affection: 20, petCount: 0, giftCount: 0 },
-"哈基慈": { realName: "", breed: "委屈喵", duty: "📖 書店長", duty_cn: "📖 书店长", isOnline: true, x: 2700, y: 1400, facing: "right", diary: [], haqiScore: 0, affection: 20, petCount: 0, giftCount: 0 },
-"哈基琪": { realName: "", breed: "心心", duty: "🕹️ 夾玩偶店長", duty_cn: "🕹️ 夹玩偶店长", isOnline: true, x: 1800, y: 2000, facing: "left", diary: [], haqiScore: 0, affection: 20, petCount: 0, giftCount: 0 },
-"哈基之": { realName: "", breed: "奶牛貓", duty: "🏪 服裝店長", duty_cn: "🏪 服装店长", isOnline: true, x: 300, y: 200, facing: "right", diary: [], haqiScore: 0, affection: 20, petCount: 0, giftCount: 0 },
-"哈基一": { realName: "言君", breed: "Ruby", duty: "☕ 咖啡店長", duty_cn: "☕ 咖啡店长", isOnline: true, x: 300, y: 2000, facing: "left", diary: [], haqiScore: 0, affection: 20, petCount: 0, giftCount: 0 },
-"哈基姿": { realName: "", breed: "幸運", duty: "🍎 水果店長", duty_cn: "🍎 水果店长", isOnline: true, x: 2700, y: 2500, facing: "right", diary: [], haqiScore: 0, affection: 20, petCount: 0, giftCount: 0 },
-"哈基桐": { realName: "", breed: "拉邦貓", duty: "🖼️ 畫廊店長", duty_cn: "🖼️ 画廊店长", isOnline: true, x: 300, y: 800, facing: "left", diary: [], haqiScore: 0, affection: 20, petCount: 0, giftCount: 0 },
-"哈基晴": { realName: "", breed: "異國短毛貓", duty: "🛝 用品店長", duty_cn: "🛝 用品店长", isOnline: true, x: 3300, y: 2000, facing: "right", diary: [], haqiScore: 0, affection: 20, petCount: 0, giftCount: 0 },
-"哈基悠": { realName: "", breed: "土耳其梵貓", duty: "💄 化妝店長", duty_cn: "💄 化妆店长", isOnline: true, x: 900, y: 1400, facing: "left", diary: [], haqiScore: 0, affection: 20, petCount: 0, giftCount: 0 },
-"哈基心": { realName: "", breed: "伯曼貓", duty: "🧸 玩具店長", duty_cn: "🧸 玩具店长", isOnline: true, x: 3300, y: 800, facing: "right", diary: [], haqiScore: 0, affection: 20, petCount: 0, giftCount: 0 }
-};
+        "哈基葵": { breed: "布偶貓", duty: "🏡 家園長", duty_cn: "🏡 家园长", x: baseX, y: baseY, facing: "right" },
+        "哈基芝": { breed: "土耳其安哥拉貓", duty: "🍹 奶茶店長", duty_cn: "🍹 奶茶店长", x: baseX + 120, y: baseY, facing: "left" },
+        "哈基游": { breed: "三花貓", duty: "🍰 甜品店長", duty_cn: "🍰 甜品店长", x: baseX + 240, y: baseY, facing: "right" },
+        "哈基慈": { breed: "委屈喵", duty: "📖 書店長", duty_cn: "📖 书店长", x: baseX, y: baseY + 120, facing: "right" },
+        "哈基琪": { breed: "心心", duty: "🕹️ 夾玩偶店長", duty_cn: "🕹️ 夹玩偶店长", x: baseX + 120, y: baseY + 120, facing: "left" },
+        "哈基之": { breed: "奶牛貓", duty: "🏪 服裝店長", duty_cn: "🏪 服装店长", x: baseX + 240, y: baseY + 120, facing: "right" },
+        "哈基一": { breed: "Ruby", duty: "☕ 咖啡店長", duty_cn: "☕ 咖啡店长", x: baseX, y: baseY + 240, facing: "left" },
+        "哈基姿": { breed: "幸運", duty: "🍎 水果店長", duty_cn: "🍎 水果店长", x: baseX + 120, y: baseY + 240, facing: "right" },
+        "哈基桐": { breed: "拉邦貓", duty: "🖼️ 畫廊店長", duty_cn: "🖼️ 画廊店长", x: baseX + 240, y: baseY + 240, facing: "left" },
+        "哈基晴": { breed: "異國短毛貓", duty: "🛝 用品店長", duty_cn: "🛝 用品店长", x: baseX - 120, y: baseY, facing: "right" },
+        "哈基悠": { breed: "土耳其梵貓", duty: "💄 化妝店長", duty_cn: "💄 化妆店长", x: baseX - 120, y: baseY + 120, facing: "left" },
+        "哈基心": { breed: "伯曼貓", duty: "🧸 玩具店長", duty_cn: "🧸 玩具店长", x: baseX - 120, y: baseY + 240, facing: "right" }
+    };
 
     // ==================== 全局變數 ====================
     let myCatName = "";
-    let isAdmin = false;
-    let isOfficer = false;
     let currentLang = 'tw'; 
-    let playerBag = { "小魚乾": 10, "貓罐頭": 3, "毛線球": 2 };
-    let dailyTaskCompleted = localStorage.getItem("dailyTaskDone") === new Date().toDateString();
-    let dailyPetTaskCompleted = localStorage.getItem("dailyPetDone") === new Date().toDateString();
-    let dailyGiftTaskCompleted = localStorage.getItem("dailyGiftDone") === new Date().toDateString();
-    let mails = [
-        { id: 1, sender: "系統", title: "歡迎來到哈基咪星球", content: "這是一封歡迎信，附贈幾個罐頭！", item: "貓罐頭", amount: 2, claimed: false },
-        { id: 2, receiver: "哈基葵", sender: "哈基一 (言君)", title: "首領，咖啡廳已準備就緒", content: "首領，今天咖啡廳的特調已經準備好了，隨時等您來品嚐。", item: null, amount: 0, claimed: false }
-    ];
-    let adminFeedback = [
-        { id: 1, sender: "哈基心", text: "玩具店進貨的毛線球好像不夠了，首領能補一點嗎？" },
-        { id: 2, sender: "哈基慈", text: "書店有一本書破損了，申請維修經費。" }
-    ];
-    let chatHistory = [];
-    let targetInteractCat = "";
-// 👇 補上這兩行變數宣告
-    let isEditMode = false; 
-    let isAiPaused = false; 
-
-    // 地圖與移動變數
-let zoomLevel = 1;
-let isWalking = false;
-let moveInterval = null;
-const MAP_WIDTH = 4000;   // 👈 新增地圖寬度
-const MAP_HEIGHT = 2000;  // 👈 新增地圖高度
-const CAT_SIZE = 80;
-const SAFE_BUFFER = 150;
+    let zoomLevel = 1;
+    let isWalking = false;
+    let moveInterval = null;
+    const MAP_WIDTH = 4000;
+    const MAP_HEIGHT = 4500;
+    const CAT_SIZE = 80;
+    const SAFE_BUFFER = 10; // 讓貓咪可以靠近邊界，但不會掉進海裡
 
     // ==================== 初始化與流程 ====================
     window.onload = function() {
-    currentLang = 'tw';
-    renderSelectGrid();
-    
-    // 👇 確認這裡有這段自動發信
-    const today = new Date().toDateString();
-    const lastLogin = localStorage.getItem("lastLoginDate");
-    
-    if (lastLogin !== today) {
-        localStorage.setItem("lastLoginDate", today);
-        
-        mails.push({
-            id: Date.now(),
-            receiver: "", 
-            sender: "哈基咪系統",
-            title: "📅 每日登入獎勵",
-            content: "歡迎回來！這是您今天的登入獎勵，請收下吧～",
-            item: "小魚乾",
-            amount: 2,
-            claimed: false
-        });
-    }
-
-    window.addEventListener("beforeunload", function() {
-        if (myCatName && catsData[myCatName]) {
-            catsData[myCatName].isOnline = false;
-        }
-    });
-};
+        currentLang = 'tw';
+        renderSelectGrid();
+    };
 
     function renderSelectGrid() {
         const grid = document.getElementById("select-grid");
         grid.innerHTML = "";
+        document.getElementById("select-title").innerText = currentLang === 'tw' ? "請選擇你要扮演的貓咪" : "请选择你要扮演的猫咪";
+        
         for (let name in catsData) {
             const info = catsData[name];
             const displayDuty = currentLang === 'tw' ? info.duty : info.duty_cn;
@@ -696,1597 +259,151 @@ const SAFE_BUFFER = 150;
 
     function selectCat(name) {
         myCatName = name;
-        isAdmin = (name === "哈基葵"); // 只有選擇哈基葵才開啟首領權限
-        isOfficer = (name === "哈基一" || name === "哈基游");
         document.getElementById("screen-select").classList.add("hidden");
         startTransition();
     }
 
     function startTransition() {
-    const transScreen = document.getElementById("screen-transition");
-    transScreen.classList.remove("hidden");
-    
-    const tCat = document.getElementById("transition-cat");
-    tCat.src = catImages[myCatName] || defaultCatSvg;
-    // 確保每次進來都重置動畫
-    tCat.classList.remove("awake"); 
+        const transScreen = document.getElementById("screen-transition");
+        transScreen.classList.remove("hidden");
+        
+        const tCat = document.getElementById("transition-cat");
+        tCat.src = catImages[myCatName] || defaultCatSvg;
+        tCat.classList.remove("awake"); 
 
-    // 0.5 秒後，貓咪出現並開始跳兩下
-    setTimeout(() => {
-        tCat.classList.add("awake");
-    }, 500);
-
-    // 1.5 秒後，顯示歡迎文字
-    setTimeout(() => {
-        document.getElementById("wake-text").style.opacity = "1";
-    }, 1500);
-
-    // 3.5 秒後，結束動畫進入遊戲
-    setTimeout(() => {
-        transScreen.classList.add("hidden");
-        enterGame();
-    }, 3500);
+        setTimeout(() => { tCat.classList.add("awake"); }, 500);
+        setTimeout(() => { document.getElementById("wake-text").style.opacity = "1"; }, 1500);
+        setTimeout(() => { 
+            transScreen.classList.add("hidden"); 
+            enterGame(); 
+        }, 3500);
     }
 
     function enterGame() {
-    document.getElementById("game-container").style.display = "block";
-    if (isAdmin) document.getElementById("admin-btn").classList.remove("hidden");
-    if (isOfficer) document.getElementById("officer-btn").classList.remove("hidden");
-    
-    catsData[myCatName].isOnline = true;
-    
-    renderMapCats();
-    centerMapOnPlayer();
-    renderBag();
-    renderMails();
-    renderAdminFeedback();
-    renderOfficerFeedback();
-    renderAdminGiftSelect();
-    loadBuildingsPosition();
-    renderAccessoriesOnMap();
-    loadCatPositions(); 
- 
+        document.getElementById("game-container").style.display = "block";
+        renderMapCats();
+        centerMapOnPlayer();
     }
 
     // ==================== 地圖與移動邏輯 ====================
     function renderMapCats() {
         const mapContent = document.getElementById("map-content");
-        // 清除現有貓咪
         document.querySelectorAll('.cat-avatar').forEach(el => el.remove());
 
         for (let name in catsData) {
             const cat = catsData[name];
-            if (!cat.isOnline) continue; // 只有線上貓咪顯示在地圖上
-
             const el = document.createElement("div");
-            el.dataset.facing = cat.facing; // 紀錄面向
-            el.className = `cat-avatar is-idle ${zoomLevel > 1.5 ? 'is-zoomed' : ''} facing-${cat.facing}`;
+            el.className = `cat-avatar facing-${cat.facing}`;
             el.id = `cat-${name}`;
             el.style.left = `${cat.x}px`;
             el.style.top = `${cat.y}px`;
-            const img = el.querySelector('.cat-img');
-            if (img) img.style.transform = `scaleX(${cat.facing === 'right' ? -1 : 1})`;
             
             const imgSrc = catImages[name] || defaultCatSvg;
-            const displayName = (name !== myCatName && !cat.isOnline) ? `🤖 ${name}` : name;
             el.innerHTML = `
                 <div class="cat-name-tag">${name}</div>
                 <img class="cat-img" src="${imgSrc}" alt="${name}" onerror="this.onerror=null; this.src='${defaultCatSvg}';">
             `;
-            
-            // 點擊其他貓咪
-            if (name !== myCatName) {
-                el.onclick = (e) => {
-                    e.stopPropagation();
-                    openInteract(name);
-                };
-            }
-            
-            // 點擊其他貓咪
-if (name !== myCatName) {
-    el.onclick = (e) => {
-        e.stopPropagation();
-        openInteract(name);
-    };
-}
-
-// 👇 加入這行，讓貓咪可以被拖曳
-bindCatDragEvents(el);
-
-mapContent.appendChild(el);
+            mapContent.appendChild(el);
         }
     }
 
     function centerMapOnPlayer() {
-    const player = catsData[myCatName];
-    const mapContent = document.getElementById("map-content");
-    const area = document.getElementById("map-area");
-    
-    // 計算畫面中心點
-    const centerX = area.clientWidth / 2;
-    const centerY = area.clientHeight / 2;
-    
-    // 貓咪相對於地圖的座標 (加上貓咪的一半寬高，讓中心點在貓咪身上)
-    const catX = player.x + CAT_SIZE / 2;
-    const catY = player.y + CAT_SIZE / 2;
+        const player = catsData[myCatName];
+        const mapContent = document.getElementById("map-content");
+        const area = document.getElementById("map-area");
+        
+        const centerX = area.clientWidth / 2;
+        const centerY = area.clientHeight / 2;
+        const catX = player.x + CAT_SIZE / 2;
+        const catY = player.y + CAT_SIZE / 2;
 
-    // 計算要平移多少，才能把貓咪移到畫面正中央 (考慮縮放比例)
-    const translateX = centerX - (catX * zoomLevel);
-    const translateY = centerY - (catY * zoomLevel);
-
-    // 套用平移與縮放
-    mapContent.style.transform = `translate(${translateX}px, ${translateY}px) scale(${zoomLevel})`;
-      updateAccessoriesPosition();
+        mapContent.style.transform = `translate(${centerX - (catX * zoomLevel)}px, ${centerY - (catY * zoomLevel)}px) scale(${zoomLevel})`;
     }
 
-    // 點擊地圖移動
     function handleMapClick(e) {
         if (e.target.closest('.cat-avatar') || e.target.closest('.building')) return;
         
         const mapContent = document.getElementById("map-content");
         const rect = mapContent.getBoundingClientRect();
         
-        // 換算回地圖內的實際座標
         const clickX = (e.clientX - rect.left) / zoomLevel;
         const clickY = (e.clientY - rect.top) / zoomLevel;
         
         movePlayerTo(clickX - CAT_SIZE/2, clickY - CAT_SIZE/2);
     }
 
-    // 雙擊地圖停止
-    function handleMapDblClick(e) {
-        if (e.target.closest('.cat-avatar') || e.target.closest('.building')) return;
-        stopPlayerMove();
-    }
-
     function stopPlayerMove() {
-        if (moveInterval) {
-            clearInterval(moveInterval);
-            moveInterval = null;
-        }
+        if (moveInterval) { clearInterval(moveInterval); moveInterval = null; }
         isWalking = false;
-        const el = document.getElementById(`cat-${myCatName}`);
-        if (el) {
-            el.classList.remove('is-walking');
-            el.classList.add('is-idle');
-        }
     }
 
     function movePlayerTo(targetX, targetY) {
-    stopPlayerMove();
-    const player = catsData[myCatName];
-    const el = document.getElementById(`cat-${myCatName}`);
-    if (!el) return;
-
-    // 檢查是否點擊到邊界外 (碰到海)
-    if (targetX < SAFE_BUFFER || targetX > MAP_WIDTH - CAT_SIZE - SAFE_BUFFER || 
-        targetY < SAFE_BUFFER || targetY > MAP_HEIGHT - CAT_SIZE - SAFE_BUFFER) {
-        showBoundaryMessage();
-        
-        // 👇 碰到海的話，退回上一個安全點
-        targetX = player.lastSafeX || player.x;
-        targetY = player.lastSafeY || player.y;
-    } else {
-        // 👇 如果安全，就記錄下來
-        player.lastSafeX = targetX;
-        player.lastSafeY = targetY;
-    }
-
-    // 面向
-    if (targetX > player.x) {
-        player.facing = "right";
-        el.className = el.className.replace(/facing-\w+/, 'facing-right');
-    } else {
-        player.facing = "left";
-        el.className = el.className.replace(/facing-\w+/, 'facing-left');
-    }
-    el.classList.remove('is-idle');
-    el.classList.add('is-walking');
-
-    const speed = 7; // 移動速度
-    moveInterval = setInterval(() => {
-        const dx = targetX - player.x;
-        const dy = targetY - player.y;
-        const distance = Math.sqrt(dx*dx + dy*dy);
-
-        if (distance < speed) {
-            player.x = targetX;
-            player.y = targetY;
-            el.style.left = `${player.x}px`;
-            el.style.top = `${player.y}px`;
-            stopPlayerMove();
-            checkProximity();
-        } else {
-            player.x += (dx / distance) * speed;
-            player.y += (dy / distance) * speed;
-            el.style.left = `${player.x}px`;
-            el.style.top = `${player.y}px`;
-            // 讓鏡頭跟隨
-            centerMapOnPlayer();
-        }
-    }, 30);
-    }
-
-    // 滾輪縮放
-    document.getElementById("map-area").addEventListener("wheel", (e) => {
-        e.preventDefault();
-        if (e.deltaY < 0) zoomLevel = Math.min(zoomLevel + 0.1, 3); // 最大放大3倍
-        else zoomLevel = Math.max(zoomLevel - 0.1, 0.5); // 最小縮小0.5倍
-        
-        centerMapOnPlayer();
-        
-        // 判斷是否放大到一定程度，切換精細動作
-        const el = document.getElementById(`cat-${myCatName}`);
-        if (el) {
-            if (zoomLevel > 1.5) el.classList.add('is-zoomed');
-            else el.classList.remove('is-zoomed');
-        }
-    });
-
-    // 檢查是否靠近其他貓咪
-    function checkProximity() {
+        stopPlayerMove();
         const player = catsData[myCatName];
-        let nearCat = "";
-        for (let name in catsData) {
-            if (name === myCatName || !catsData[name].isOnline) continue;
-            const other = catsData[name];
-            const distance = Math.sqrt(Math.pow(player.x - other.x, 2) + Math.pow(player.y - other.y, 2));
-            if (distance < 100) {
-                nearCat = name;
-                break;
-            }
-        }
-        
-        if (nearCat) {
-            openInteract(nearCat);
-        }
-    }
-
-    // ==================== 打招呼互動 ====================
-    function openInteract(catName) {
-        targetInteractCat = catName;
-        const cat = catsData[catName];
-        
-        let title = `與 ${catName} 打招呼`;
-        // 特殊身份彩蛋
-        if (myCatName === "哈基葵") {
-            if (catName === "哈基一") title = `與 言君 (哈基一) 打招呼`;
-            if (catName === "哈基游") title = `與 何藍豆 (哈基游) 打招呼`;
-        }
-
-        document.getElementById("interact-title").innerText = title;
-        toggleModal('modal-interact');
-    }
-
-    function doInteractAction() {
-      if (!dailyPetTaskCompleted) {
-            dailyPetTaskCompleted = true;
-            localStorage.setItem("dailyPetDone", new Date().toDateString());
-            playerBag["小魚乾"] = (playerBag["小魚乾"] || 0) + 1;
-            renderBag();
-            setTimeout(() => alert("🎯 完成每日任務：與貓咪蹭蹭！獲得小魚乾 x1"), 500);
-      }
-    const target = catsData[targetInteractCat];
-    const isTw = currentLang === 'tw';
-    
-    if (target.affection >= 100) {
-        alert(isTw ? "好感度已滿！" : "好感度已满！");
-        toggleModal('modal-interact');
-        return;
-    }
-
-    if (target.petCount >= 2) {
-        alert(isTw ? "今天已經蹭過兩次了，明天再來吧！" : "今天已经蹭过两次了，明天再来吧！");
-        toggleModal('modal-interact');
-        return;
-    }
-
-    target.affection = Math.min(100, target.affection + 1);
-    target.petCount += 1;
-
-    const pEl = document.getElementById(`cat-${myCatName}`);
-    if (pEl) {
-        pEl.classList.add('is-petting');
-        setTimeout(() => pEl.classList.remove('is-petting'), 500);
-    }
-    
-    const oEl = document.getElementById(`cat-${targetInteractCat}`);
-    if (oEl) {
-        oEl.classList.add('is-petting');
-        setTimeout(() => oEl.classList.remove('is-petting'), 500);
-    }
-
-    addChatMessage("系統", isTw ? `你與 ${targetInteractCat} 蹭了蹭！好感度 +1 (今日剩餘次數：${2 - target.petCount})` : `你与 ${targetInteractCat} 蹭了蹭！好感度 +1 (今日剩余次数：${2 - target.petCount})`, false);
-    toggleModal('modal-interact');
-    }
-
-    function openGiftPanel() {
-        toggleModal('modal-interact');
-        const list = document.getElementById("gift-list");
-        list.innerHTML = "";
-        for (let item in playerBag) {
-            if (playerBag[item] > 0) {
-                const li = document.createElement("li");
-                li.innerHTML = `
-                    <span>${item} (x${playerBag[item]})</span>
-                    <button onclick="sendGift('${item}')">送出</button>
-                `;
-                list.appendChild(li);
-            }
-        }
-        if (list.innerHTML === "") {
-            list.innerHTML = "<li>背包空空如也，無法送禮。</li>";
-        }
-        toggleModal('modal-gift');
-    }
-  
-      function sendGift(item) {
-        if (!dailyGiftTaskCompleted) {
-            dailyGiftTaskCompleted = true;
-            localStorage.setItem("dailyGiftDone", new Date().toDateString());
-            playerBag["小魚乾"] = (playerBag["小魚乾"] || 0) + 1;
-            renderBag();
-            setTimeout(() => alert("🎯 完成每日任務：送禮給貓咪！獲得小魚乾 x1"), 500);
-        }
-        const target = catsData[targetInteractCat];
-        const isTw = currentLang === 'tw';
-
-        if (target.affection >= 100) {
-            alert(isTw ? "好感度已滿！" : "好感度已满！");
-            return;
-        }
-
-        if (target.giftCount >= 2) {
-            alert(isTw ? "今天已經送過兩次禮物了，明天再來吧！" : "今天已经送过两次礼物了，明天再来吧！");
-            toggleModal('modal-gift');
-            return;
-        }
-
-        if (playerBag[item] > 0) {
-            playerBag[item]--;
-            target.affection = Math.min(100, target.affection + 2);
-            target.giftCount += 1;
-        
-            renderBag();
-            addChatMessage("系統", isTw ? `你送給了 ${targetInteractCat} 一個 ${item}！好感度 +2 (今日剩餘次數：${2 - target.giftCount})` : `你送给了 ${targetInteractCat} 一个 ${item}！好感度 +2 (今日剩余次数：${2 - target.giftCount})`, false);
-            toggleModal('modal-gift');
-        
-            setTimeout(() => {
-                mails.push({
-                    id: Date.now(), sender: targetInteractCat, title: "感謝你的禮物", content: `謝謝你送的 ${item}，我很喜歡！`, item: null, amount: 0, claimed: false
-                });
-                renderMails();
-            }, 2000);
-        }
-    }
-
-    // ==================== 聊天室 ====================
-  function sendChatMessage() {
-    if (!dailyTaskCompleted) {
-            dailyTaskCompleted = true;
-            localStorage.setItem("dailyTaskDone", new Date().toDateString());
-            playerBag["小魚乾"] = (playerBag["小魚乾"] || 0) + 1;
-            renderBag();
-            setTimeout(() => alert("🎯 完成每日任務：在聊天室發言！獲得小魚乾 x1"), 500);
-    }
-        const input = document.getElementById("chat-input");
-        const text = input.value.trim();
-        if (!text) return;
-
-        addChatMessage(myCatName, text, true);
-        input.value = "";
-
-    // 隨機 AI 貓咪回覆
-        setTimeout(() => {
-            const aiCats = Object.keys(catsData).filter(name => name !== myCatName && catsData[name].isOnline);
-            if (aiCats.length === 0) return; // 如果沒有 AI 在線上就不回
-        
-            const randomCat = aiCats[Math.floor(Math.random() * aiCats.length)];
-            const isTw = currentLang === 'tw';
-            const replies = isTw ? [
-                "喵嗚～", "你說得對！", "今天天氣真好～", "我也這麼覺得！", "要吃罐罐嗎？", "（蹭蹭你）", "你回來啦！"
-            ] : [
-                "喵呜～", "你说得对！", "今天天气真好～", "我也这么觉得！", "要吃罐罐吗？", "（蹭蹭你）", "你回来啦！"
-            ];
-            const reply = replies[Math.floor(Math.random() * replies.length)];
-        
-            addChatMessage(randomCat, reply, false);
-        }, 1500 + Math.random() * 1500); // 延遲 1.5 ~ 3 秒後回覆，比較自然
-    }
-
-    function addChatMessage(sender, text, isUser) {
-        chatHistory.push({ sender, text, isUser });
-        renderChat();
-    }
-
-    function renderChat() {
-        const box = document.getElementById("chat-box");
-        box.innerHTML = chatHistory.map(msg => `
-            <div class="chat-msg ${msg.isUser ? 'user' : ''}">
-                <strong>${msg.sender}:</strong> ${msg.text}
-            </div>
-        `).join('');
-        box.scrollTop = box.scrollHeight;
-    }
-
-    // ==================== 背包與郵箱 ====================
-    function renderBag() {
-        const list = document.getElementById("bag-list");
-        list.innerHTML = "";
-        for (let item in playerBag) {
-            if (playerBag[item] > 0) {
-                list.innerHTML += `<li><span>${item}</span> <span>x${playerBag[item]}</span></li>`;
-            }
-        }
-        if (list.innerHTML === "") list.innerHTML = "<li>背包空空如也。</li>";
-    }
-
-    function renderMails() {
-    const list = document.getElementById("mail-list");
-    list.innerHTML = "";
-    
-    // 👇 這裡是關鍵：嚴格過濾收件人
-    const myMails = mails.filter(mail => {
-        // 如果這封信有指定收件人，而且收件人不是我，就不顯示
-        if (mail.receiver && mail.receiver !== myCatName) return false;
-        // 如果沒有指定收件人（全服公告），或者收件人是我，就顯示
-        return true;
-    });
-    
-    myMails.forEach(mail => {
-        list.innerHTML += `
-            <li>
-                <div>
-                    <strong>${mail.sender}</strong>: ${mail.title}<br>
-                    <span style="font-size:11px; color:#7f8c8d;">${mail.content}</span>
-                </div>
-                <div>
-                    ${!mail.claimed ? `<button onclick="claimMail(${mail.id})">領取附件</button>` : `<span style="color:#27ae60; font-size:12px;">已領取</span>`}
-                </div>
-            </li>
-        `;
-    });
-    if (list.innerHTML === "") list.innerHTML = "<li>沒有新信件。</li>";
-  }
-
-    function claimMail(id) {
-        const mail = mails.find(m => m.id === id);
-        if (mail && !mail.claimed && mail.item) {
-            playerBag[mail.item] = (playerBag[mail.item] || 0) + mail.amount;
-            mail.claimed = true;
-            renderBag();
-            renderMails();
-            alert(`獲得 ${mail.item} x${mail.amount}！`);
-        } else if (mail && !mail.item) {
-            mail.claimed = true;
-            renderMails();
-            alert("已閱讀信件。");
-        }
-    }
-
-    // ==================== 首領專屬面板 ====================
-    function renderAdminFeedback() {
-    if (!isAdmin) return;
-    const list = document.getElementById("admin-feedback-list");
-    list.innerHTML = "";
-    
-    adminFeedback.forEach(fb => {
-        let replyHtml = "";
-        // 如果已經有長官或首領的回覆，就顯示出來
-        if (fb.reply) {
-            replyHtml = `<div style="font-size:11px; color:#2980b9; margin-top:5px;">↳ 已回覆：${fb.reply}</div>`;
-        } else {
-            // 如果沒有回覆，就顯示按鈕
-            replyHtml = `<button onclick="replyFeedback(${fb.id})" style="margin-top:5px; padding:3px 8px; font-size:12px; background:white; border:1px solid #2c3e50; border-radius: 4px;">✉️ 回覆</button>`;
-        }
-        list.innerHTML += `<li style="display:block;"><strong>${fb.sender}:</strong> ${fb.text} ${replyHtml}</li>`;
-    });
-    }
-
-    function sendAdminAnnounce() {
-        const input = document.getElementById("admin-announce-input");
-        const text = input.value.trim();
-        if (text) {
-            document.getElementById("announcement-text").innerText = `【首領廣播】${text}`;
-            input.value = "";
-            alert("全服廣播已發送！");
-            toggleModal('modal-admin');
-        }
-    }
-    // ==================== 彈窗與語言 ====================
-    function toggleModal(id) {
-        const el = document.getElementById(id);
-        const overlay = document.getElementById("modal-overlay");
-        if (el.classList.contains("modal")) {
-            if (el.style.display === "block") {
-                el.style.display = "none";
-                overlay.style.display = "none";
-            } else {
-                closeAllModals();
-                el.style.display = "block";
-                overlay.style.display = "block";
-                if (id === 'modal-friends') renderFriendList();
-            }
-        }
-    }
-
-    function closeAllModals() {
-        document.querySelectorAll('.modal').forEach(el => el.style.display = "none");
-        document.getElementById("modal-overlay").style.display = "none";
-    }
-
-    function toggleLang() {
-    const btn = document.getElementById("btn-lang");
-    currentLang = currentLang === 'tw' ? 'cn' : 'tw';
-    
-    if (currentLang === 'tw') {
-        btn.innerText = "简体中文";
-        document.getElementById("announcement-text").innerText = "歡迎來到哈基咪星球！";
-        document.querySelectorAll('.building').forEach(el => {
-            el.innerHTML = el.getAttribute('data-tw');
-        });
-    } else {
-        btn.innerText = "繁體中文";
-        document.getElementById("announcement-text").innerText = "欢迎来到哈基咪星球！";
-        document.querySelectorAll('.building').forEach(el => {
-            el.innerHTML = el.getAttribute('data-cn');
-        });
-    }
-    renderUI(); // 重新渲染列表
-    renderSelectGrid(); // 重新渲染選角
-    }
-// ==================== 長官專屬邏輯 ====================
-function renderOfficerFeedback() {
-    if (!isOfficer) return;
-    const list = document.getElementById("officer-feedback-list");
-    list.innerHTML = "";
-    adminFeedback.forEach(fb => {
-        let replyHtml = "";
-        if (fb.reply) {
-            replyHtml = `<div style="font-size:11px; color:#2980b9; margin-top:5px;">↳ 已回覆：${fb.reply}</div>`;
-        } else {
-            replyHtml = `<button onclick="replyFeedback(${fb.id})" style="margin-top:5px; padding:3px 8px; font-size:12px; background:white; border:1px solid #2c3e50;">✉️ 回覆</button>`;
-        }
-        list.innerHTML += `<li style="display:block;"><strong>${fb.sender}:</strong> ${fb.text} ${replyHtml}</li>`;
-    });
-}
-
-function replyFeedback(id) {
-    const fb = adminFeedback.find(f => f.id === id);
-    if (!fb) return;
-    const replyText = prompt(`回覆給 ${fb.sender}：`);
-    if (replyText && replyText.trim() !== "") {
-        fb.reply = replyText.trim();
-        renderOfficerFeedback();
-        if (isAdmin) renderAdminFeedback(); // 同步更新首領面板
-        alert("回覆已送出！");
-    }
-}
-  // ==================== 手機觸控與縮放優化 ====================
-let initialPinchDistance = 0;
-let initialZoom = 1;
-
-document.getElementById("map-area").addEventListener("touchstart", (e) => {
-    if (e.touches.length === 2) {
-        initialPinchDistance = Math.hypot(
-            e.touches[0].clientX - e.touches[1].clientX,
-            e.touches[0].clientY - e.touches[1].clientY
-        );
-        initialZoom = zoomLevel;
-    }
-}, { passive: false });
-
-document.getElementById("map-area").addEventListener("touchmove", (e) => {
-    if (e.touches.length === 2) {
-        e.preventDefault(); // 防止瀏覽器預設的頁面縮放
-        const currentDistance = Math.hypot(
-            e.touches[0].clientX - e.touches[1].clientX,
-            e.touches[0].clientY - e.touches[1].clientY
-        );
-        if (initialPinchDistance > 0) {
-            const scaleFactor = currentDistance / initialPinchDistance;
-            zoomLevel = Math.max(0.5, Math.min(initialZoom * scaleFactor, 3));
-            centerMapOnPlayer();
-            
-            // 放大細節切換
-            const el = document.getElementById(`cat-${myCatName}`);
-            if (el) {
-                if (zoomLevel > 1.5) el.classList.add('is-zoomed');
-                else el.classList.remove('is-zoomed');
-            }
-        }
-    }
-}, { passive: false });
-
-// 手機按鈕手動縮放
-function manualZoom(dir) {
-    if (dir > 0) zoomLevel = Math.min(zoomLevel + 0.2, 3);
-    else zoomLevel = Math.max(zoomLevel - 0.2, 0.5);
-    
-    centerMapOnPlayer();
-    
-    const el = document.getElementById(`cat-${myCatName}`);
-    if (el) {
-        if (zoomLevel > 1.5) el.classList.add('is-zoomed');
-        else el.classList.remove('is-zoomed');
-    }
-}
-  // ==================== 手機專用：輕觸兩下停止移動 ====================
-let lastTouchTime = 0;
-document.getElementById("map-area").addEventListener("touchend", function(e) {
-    const currentTime = new Date().getTime();
-    const tapLength = currentTime - lastTouchTime;
-    
-    // 如果兩次點擊間隔小於 300 毫秒，且沒有點在貓咪或建築上
-    if (tapLength < 300 && tapLength > 0 && !e.target.closest('.cat-avatar') && !e.target.closest('.building')) {
-        stopPlayerMove(); // 觸發停止
-        e.preventDefault();
-    }
-    lastTouchTime = currentTime;
-});
-  // ======= 重新定義選角畫面 =======
-function renderSelectGrid() {
-    const grid = document.getElementById("select-grid");
-    if (!grid) return;
-    grid.innerHTML = "";
-    for (let name in catsData) {
-        const info = catsData[name];
-        // 加上安全判斷，如果 duty_cn 不存在也不會報錯
-        const displayDuty = currentLang === 'tw' ? info.duty : (info.duty_cn || info.duty);
-        const imgSrc = (typeof catImages !== 'undefined' && catImages[name]) ? catImages[name] : defaultCatSvg;
-        
-        const card = document.createElement("div");
-        card.className = "select-card";
-        card.onclick = () => selectCat(name);
-        card.innerHTML = `
-            <img src="${imgSrc}" alt="${name}">
-            <div class="name">${name}</div>
-            <div class="duty">${displayDuty}</div>
-        `;
-        grid.appendChild(card);
-    }
-}
-
-// ======= 重新定義遊戲左側列表 =======
-function renderUI() {
-    let html = "";
-    for(let name in catsData) {
-        const cat = catsData[name]; 
-        const info = catsData[name];
-        // 判斷語言：如果是簡體就抓 duty_cn，否則抓 duty
-        const displayDuty = currentLang === 'tw' ? info.duty : (info.duty_cn || info.duty);
-        
-        const statusText = cat.isOnline ? `<span class='status-online'>${langPack[currentLang].statusOnline}</span>` : `<span class='status-ai'>${langPack[currentLang].statusAI}</span>`;
-        const btnText = cat.isOnline ? langPack[currentLang].btnOffline : langPack[currentLang].btnOnline;
-        const selectedClass = name === selectedCatForGame ? 'border: 3px solid #2c3e50; background-color: #e2e7ea;' : '';
-        
-        html += `<div class="cat-item" onclick="viewDiary('${name}'); renderUI();" style="cursor:pointer; ${selectedClass}"> 
-                    <div> <strong>${name}</strong> <span class="duty-tag">${displayDuty}</span><br> 
-                    <span style="font-size:12px; color:#7f8c8d;">🧬 ${info.breed}</span><br>
-                    <span style="font-size:12px; color:#2c3e50; font-weight:bold;">📍 ${cat.loc}</span> </div> 
-                    <div> ${statusText} &nbsp; <button class="action-btn" onclick="event.stopPropagation(); toggleStatus('${name}')">${btnText}</button> </div> 
-                 </div>`;
-    }
-    
-    const catListEl = document.getElementById("cat-list");
-    if (catListEl) catListEl.innerHTML = html;
-    
-    if (typeof getCurrentFestival === 'function' && getCurrentFestival() === "哈氣節") {
-        renderLeaderboard();
-    }
-    const chatSelect = document.getElementById("chat-cat-select");
-if (chatSelect && !chatSelect.options.length) {
-    initChatSelect();
-}
-}
-  // ==================== 首領無限發放物資 ====================
-// 初始化下拉選單（進入遊戲時呼叫）
-function renderAdminGiftSelect() {
-    const catSelect = document.getElementById("admin-gift-cat");
-    if (!catSelect) return;
-    catSelect.innerHTML = "";
-    for (let name in catsData) {
-        if (name === myCatName) continue; // 不能選自己
-        const opt = document.createElement("option");
-        opt.value = name;
-        opt.textContent = `🐱 ${name}`;
-        catSelect.appendChild(opt);
-    }
-}
-
-// 首領點擊發送
-function sendAdminGift() {
-    const catName = document.getElementById("admin-gift-cat").value;
-    const item = document.getElementById("admin-gift-item").value;
-    const isTw = currentLang === 'tw';
-
-    if (!catName) return;
-
-    // 塞入指定貓咪的郵箱
-    mails.push({
-        id: Date.now(), 
-        receiver: catName, // 只有這個收件人能看到
-        sender: isTw ? "首領 葵貓" : "首领 葵猫",
-        title: isTw ? "來自首領的恩賜" : "来自首领的恩赐", 
-        content: isTw ? `這是首領賞賜給你的 ${item}，請好好努力！` : `这是首领赏赐给你的 ${item}，请好好努力！`, 
-        item: item, 
-        amount: 1, 
-        claimed: false
-    });
-
-    // 聊天室提示 (只有自己看到)
-    addChatMessage("系統", isTw ? `👑 你已將 ${item} 放入 ${catName} 的郵箱！` : `👑 你已将 ${item} 放入 ${catName} 的邮箱！`, false);
-    
-    alert(isTw ? `已發送！請切換到 ${catName} 的帳號去收信吧！` : `已发送！请切换到 ${catName} 的账号去收信吧！`);
-}
-
-// 收件人感謝首領
-function thankLeader(mailId) {
-    const mail = mails.find(m => m.id === mailId);
-    if (!mail || mail.thanked) return;
-
-    const isTw = currentLang === 'tw';
-
-    mail.thanked = true; // 標記為已感謝
-    renderMails();
-
-    // 發一封感謝信回首領信箱
-    mails.push({
-        id: Date.now(),
-        receiver: "哈基葵", // 發回首領
-        sender: myCatName,
-        title: isTw ? "來自下屬的感謝" : "来自下属的感谢",
-        content: isTw ? `非常感謝首領賞賜的物資！我會繼續為星球努力的！` : `非常感谢首领赏赐的物资！我会继续为星球努力的！`,
-        item: null,
-        amount: 0,
-        claimed: false
-    });
-
-    addChatMessage("系統", isTw ? `你向首領發送了感謝信！` : `你向首领发送了感谢信！`, false);
-    alert(isTw ? "感謝信已送出！" : "感谢信已送出！");
-}
-  // ==================== AI 自動接管與漫步 ====================
-// ==================== AI 自動接管與漫步 ====================
-setInterval(() => {
-    // 只有進入遊戲後才啟動
-    if (isAiPaused) return;
-    if (!myCatName || document.getElementById("game-container").style.display !== "block") return;
-
-    const aiCats = Object.keys(catsData).filter(name => name !== myCatName && catsData[name].isOnline);
-    
-    // 1. AI 隨機漫步（只在附近小範圍走動）
-aiCats.forEach(name => {
-    if (Math.random() < 0.3) { 
-        const cat = catsData[name];
-        const el = document.getElementById(`cat-${name}`);
+        const el = document.getElementById(`cat-${myCatName}`);
         if (!el) return;
 
-        // 預設在中央廣場
-let homeX = 1800, homeY = 800; 
-let shopIndex = -1;
+        // 邊界限制：不會掉進海裡 (0~MAP_WIDTH 之間)
+        targetX = Math.max(SAFE_BUFFER, Math.min(targetX, MAP_WIDTH - CAT_SIZE - SAFE_BUFFER));
+        targetY = Math.max(SAFE_BUFFER, Math.min(targetY, MAP_HEIGHT - CAT_SIZE - SAFE_BUFFER));
 
-// 👇 根據店長，對應到 HTML 裡第幾個建築物 (index)
-if (name === "哈基之") shopIndex = 0;       // 服裝店
-else if (name === "哈基葵") shopIndex = 1;  // 溫馨家園
-else if (name === "哈基芝") shopIndex = 2;  // 奶茶店
-else if (name === "哈基桐") shopIndex = 3;  // 貓畫廊
-else if (name === "哈基心") shopIndex = 5;  // 玩具店
-else if (name === "哈基悠") shopIndex = 6;  // 化妝店
-else if (name === "哈基慈") shopIndex = 7;  // 書店
-else if (name === "哈基一") shopIndex = 8;  // 咖啡廳
-else if (name === "哈基琪") shopIndex = 9;  // 夾公仔店
-else if (name === "哈基晴") shopIndex = 10; // 用品店
-else if (name === "哈基游") shopIndex = 11; // 甜品店
-else if (name === "哈基姿") shopIndex = 12; // 水果店
-
-// 👇 如果他有專屬店鋪，就直接抓取那個店鋪「現在」的即時座標
-if (shopIndex !== -1) {
-    const buildings = document.querySelectorAll(".building");
-    if (buildings[shopIndex]) {
-        // 讀取店鋪當前的 left 和 top，並把字串轉成數字
-        homeX = parseFloat(buildings[shopIndex].style.left) || 0;
-        homeY = parseFloat(buildings[shopIndex].style.top) || 0;
-        
-        // 把徘徊的中心點稍微往下移一點，讓他站在店門口
-        homeY += 200; 
-    }
-}
-
-// 隨機在店鋪周圍 150 像素內走動
-const moveRadius = 150;
-let targetX = homeX + (Math.random() * moveRadius * 2 - moveRadius);
-let targetY = homeY + (Math.random() * moveRadius * 2 - moveRadius);
-
-// 加上安全緩衝區 (buffer = 150)，讓貓咪絕對不會踩進海裡
-const buffer = 150;
-// 加上安全緩衝區，讓貓咪絕對不會踩進海裡
-targetX = Math.max(SAFE_BUFFER, Math.min(targetX, MAP_WIDTH - CAT_SIZE - SAFE_BUFFER));   
-targetY = Math.max(SAFE_BUFFER, Math.min(targetY, MAP_HEIGHT - CAT_SIZE - SAFE_BUFFER)); 
-
-// 👇 另外，如果 AI 當前位置已經不小心在海裡了，強制把他拉回來
-if (cat.x < SAFE_BUFFER) cat.x = SAFE_BUFFER;
-if (cat.y < SAFE_BUFFER) cat.y = SAFE_BUFFER;
-if (cat.x > MAP_WIDTH - CAT_SIZE - SAFE_BUFFER) cat.x = MAP_WIDTH - CAT_SIZE - SAFE_BUFFER;
-if (cat.y > MAP_HEIGHT - CAT_SIZE - SAFE_BUFFER) cat.y = MAP_HEIGHT - CAT_SIZE - SAFE_BUFFER;     
-
-        // 面向
-        el.className = el.className.replace(/facing-\w+/, targetX > cat.x ? 'facing-right' : 'facing-left');
-
-        // 設定超慢的走路速度
-        el.style.transition = "top 6s linear, left 6s linear";
-        el.style.left = `${targetX}px`;
-        el.style.top = `${targetY}px`;
-
-        // 更新資料
-        cat.x = targetX;
-        cat.y = targetY;
-    }
-});
-
-    // 2. AI 隨機在日常發言（機率 5%，偶爾講一句）
-    if (aiCats.length > 0 && Math.random() < 0.05) {
-        const randomCat = aiCats[Math.floor(Math.random() * aiCats.length)];
-        const isTw = currentLang === 'tw';
-        const aiChats = isTw ? [
-            "喵嗚～今天天氣真好！", "有人在嗎？出來陪我玩～", "（正在發呆看窗外）", "誰要去咖啡廳喝一杯？", "肚子餓了，想找罐罐吃..."
-        ] : [
-            "喵呜～今天天气真好！", "有人在吗？出来陪我玩～", "（正在发呆看窗外）", "谁要去咖啡厅喝一杯？", "肚子饿了，想找罐罐吃..."
-        ];
-        const msg = aiChats[Math.floor(Math.random() * aiChats.length)];
-        addChatMessage(randomCat, msg, false);
-    }
-}, 8000); // 每 8 秒執行一次
-  // ==================== 邊界提示氣泡 ====================
-function showBoundaryMessage() {
-    // 避免連續彈出，先檢查有沒有存在
-    if (document.getElementById("boundary-toast")) return;
-
-    const isTw = currentLang === 'tw';
-    const toast = document.createElement("div");
-    toast.id = "boundary-toast";
-    toast.innerText = isTw ? "前面的區域之後再來吧～喵 🐾" : "前面的区域之后再来吧～喵 🐾";
-    
-    // 設定樣式：固定在畫面正中間偏下，像遊戲裡的提示
-    toast.style.cssText = `
-        position: fixed;
-        top: 70%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background-color: rgba(44, 62, 80, 0.9);
-        color: white;
-        padding: 12px 24px;
-        border-radius: 20px;
-        font-size: 16px;
-        font-weight: bold;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        z-index: 10000;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    `;
-
-    document.body.appendChild(toast);
-
-    // 淡入
-    setTimeout(() => toast.style.opacity = "1", 10);
-
-    // 兩秒後淡出並移除
-    setTimeout(() => {
-        toast.style.opacity = "0";
-        setTimeout(() => {
-            if (toast.parentNode) toast.parentNode.removeChild(toast);
-        }, 300);
-    }, 2000);
-}
-  // ==================== 首領地圖編輯器 ====================
-
-function toggleMapEditor() {
-    isEditMode = !isEditMode;
-    isAiPaused = isEditMode;
-    const btn = document.getElementById("btn-edit-map");
-    const buildings = document.querySelectorAll(".building");
-    
-    if (isEditMode) {
-        btn.innerText = "❌ 關閉編輯模式";
-        btn.style.background = "#2980b9";
-        btn.style.color = "white";
-        buildings.forEach(b => b.style.cursor = "move");
-        document.getElementById("map-area").addEventListener("mousedown", startDragBuilding);
-        document.getElementById("map-area").addEventListener("touchstart", startDragBuilding, { passive: false });
-        
-        // 👇 加入這行：開啟時自動把視野拉到整座島
-        zoomToIsland(); 
-        
-        alert("🗺️ 編輯模式已開啟！\n請在地圖上『拖曳』建築物來改變位置，放開滑鼠/手指即可儲存。");
-    } else {
-        btn.innerText = "開啟編輯模式";
-        btn.style.background = "white";
-        btn.style.color = "#2980b9";
-        buildings.forEach(b => b.style.cursor = "pointer");
-        document.getElementById("map-area").removeEventListener("mousedown", startDragBuilding);
-        document.getElementById("map-area").removeEventListener("touchstart", startDragBuilding);
-        alert("✅ 編輯模式已關閉，位置已儲存！");
-    }
-    toggleModal('modal-admin');
-  }
-
-// 處理拖曳邏輯
-// ==================== 處理拖曳邏輯 ====================
-let draggingBuilding = null;
-let dragStartLeft = 0;
-let dragStartTop = 0;
-let dragStartX = 0;
-let dragStartY = 0;
-
-function startDragBuilding(e) {
-    if (!isEditMode) return;
-    const building = e.target.closest('.building');
-    if (!building) return;
-    
-    e.stopPropagation(); // 阻止事件穿透
-    e.preventDefault();  // 阻止手機預設滑動
-    
-    draggingBuilding = building;
-    
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    
-    dragStartLeft = parseFloat(building.style.left) || 0;
-    dragStartTop = parseFloat(building.style.top) || 0;
-    
-    dragStartX = clientX;
-    dragStartY = clientY;
-
-    document.addEventListener("mousemove", dragBuilding);
-    document.addEventListener("touchmove", dragBuilding, { passive: false });
-    document.addEventListener("mouseup", stopDragBuilding);
-    document.addEventListener("touchend", stopDragBuilding);
-}
-
-function dragBuilding(e) {
-    if (!draggingBuilding) return;
-    
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    
-    const deltaX = (clientX - dragStartX) / zoomLevel;
-    const deltaY = (clientY - dragStartY) / zoomLevel;
-    
-    let newLeft = dragStartLeft + deltaX;
-    let newTop = dragStartTop + deltaY;
-
-    const bWidth = draggingBuilding.offsetWidth;
-    const bHeight = draggingBuilding.offsetHeight;
-
-    // 👇 限制店鋪不能拖到海裡 (使用 SAFE_BUFFER)
-    newLeft = Math.max(SAFE_BUFFER, Math.min(newLeft, MAP_WIDTH - bWidth - SAFE_BUFFER));
-    newTop = Math.max(SAFE_BUFFER, Math.min(newTop, MAP_HEIGHT - bHeight - SAFE_BUFFER));
-
-    draggingBuilding.style.left = `${newLeft}px`;
-    draggingBuilding.style.top = `${newTop}px`;
-}
-
-function stopDragBuilding() {
-    if (!draggingBuilding) return;
-    
-    draggingBuilding = null;
-    document.removeEventListener("mousemove", dragBuilding);
-    document.removeEventListener("touchmove", dragBuilding);
-    document.removeEventListener("mouseup", stopDragBuilding);
-    document.removeEventListener("touchend", stopDragBuilding);
-    
-    saveBuildingsPosition(); // 放開滑鼠時，立刻存檔！
-}
-
-// 儲存位置到 localStorage
-function saveBuildingsPosition() {
-    const positions = {};
-    document.querySelectorAll(".building").forEach((b, index) => {
-        positions[index] = {
-            left: b.style.left,
-            top: b.style.top
-        };
-    });
-    localStorage.setItem("catPlanetBuildings", JSON.stringify(positions));
-}
-
-// 載入儲存的位置
-function loadBuildingsPosition() {
-    const saved = localStorage.getItem("catPlanetBuildings");
-    if (!saved) return;
-    
-    const positions = JSON.parse(saved);
-    document.querySelectorAll(".building").forEach((b, index) => {
-        if (positions[index]) {
-            b.style.left = positions[index].left;
-            b.style.top = positions[index].top;
+        if (targetX > player.x) {
+            player.facing = "right";
+            el.className = el.className.replace(/facing-\w+/, 'facing-right');
+        } else {
+            player.facing = "left";
+            el.className = el.className.replace(/facing-\w+/, 'facing-left');
         }
-    });
-}
-  // ==================== 回覆客服反饋 ====================
-function replyFeedback(id) {
-    const fb = adminFeedback.find(f => f.id === id);
-    if (!fb) return;
-    
-    const isTw = currentLang === 'tw';
-    const replyText = prompt(isTw ? `回覆給 ${fb.sender}：` : `回复给 ${fb.sender}：`);
-    
-    if (replyText && replyText.trim() !== "") {
-        fb.reply = replyText.trim();
-        
-        // 重新渲染面板（首領跟長官的面板都要更新）
-        if (isAdmin) renderAdminFeedback();
-        if (isOfficer) renderOfficerFeedback();
-        
-        alert(isTw ? "回覆已送出！" : "回复已送出！");
-    }
-}
-    // ==================== 好友好感度列表 ====================
-function renderFriendList() {
-    const list = document.getElementById("friend-list");
-    if (!list) return;
-    list.innerHTML = "";
-    const isTw = currentLang === 'tw';
 
-    for (let name in catsData) {
-        if (name === myCatName) continue; 
-        
-        const cat = catsData[name];
-        let barColor = "#e74c3c";
-        if (cat.affection >= 80) barColor = "#f1c40f";
-        else if (cat.affection >= 50) barColor = "#3498db";
+        const speed = 10;
+        moveInterval = setInterval(() => {
+            const dx = targetX - player.x;
+            const dy = targetY - player.y;
+            const distance = Math.sqrt(dx*dx + dy*dy);
 
-        list.innerHTML += `
-            <li style="display:block;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                    <strong>🐱 ${name}</strong>
-                    <span style="font-size:12px; color:#7f8c8d;">❤️ ${cat.affection} / 100</span>
-                </div>
-                <div style="width:100%; height:10px; background:#ecf0f1; border-radius:5px; overflow:hidden; border:1px solid #bdc3c7;">
-                    <div style="width:${cat.affection}%; height:100%; background:${barColor}; transition:width 0.3s;"></div>
-                </div>
-                <div style="font-size:11px; color:#95a5a6; margin-top:5px; text-align:right;">
-                    ${isTw ? '今日剩餘：' : '今日剩余：'} 蹭蹭 ${2 - cat.petCount} 次 | 送禮 ${2 - cat.giftCount} 次
-                </div>
-            </li>
-        `;
-    }
-}
-      // ==================== 衣櫃與飾品系統 ====================
-let accessories = [
-    { id: "acc1", name: "精緻蕾絲領結", icon: "🎀", isOwned: true },
-    { id: "acc2", name: "酷炫黑墨鏡", icon: "🕶️", isOwned: false },
-    { id: "acc3", name: "紅色小圍巾", icon: "🧣", isOwned: false },
-    { id: "acc4", name: "黃金王冠", icon: "👑", isOwned: false },
-    { id: "acc5", name: "藍色小帽子", icon: "🧢", isOwned: false },
-    { id: "acc6", name: "粉色蝴蝶結", icon: "🎀", isOwned: false },
-    { id: "acc7", name: "探險家帽子", icon: "👒", isOwned: false },
-    { id: "acc8", name: "聖誕帽", icon: "🎅", isOwned: false },
-    { id: "acc9", name: "花圈", icon: "🌸", isOwned: false },
-    { id: "acc10", name: "太空頭盔", icon: "🪖", isOwned: false }
-];
-let wornAccessoriesOnMap = [];
-
-function switchBagTab(tab) {
-    if (tab === 'items') {
-        document.getElementById("bag-list").style.display = "block";
-        document.getElementById("closet-area").style.display = "none";
-        document.getElementById("tab-btn-items").style.background = "#e2e7ea";
-        document.getElementById("tab-btn-closet").style.background = "white";
-    } else {
-        document.getElementById("bag-list").style.display = "none";
-        document.getElementById("closet-area").style.display = "block";
-        document.getElementById("tab-btn-items").style.background = "white";
-        document.getElementById("tab-btn-closet").style.background = "#e2e7ea";
-        renderCloset();
-    }
-}
-
-function renderCloset() {
-    const list = document.getElementById("closet-list");
-    if (!list) return;
-    list.innerHTML = "";
-    accessories.forEach(acc => {
-        let statusHtml = acc.isOwned 
-            ? `<button onclick="addAccessoryToCat('${acc.id}')" style="padding: 4px 8px; font-size:12px; border:1px solid #2c3e50; border-radius:4px; background:white; color:#2c3e50;">穿戴</button>`
-            : `<span style="font-size:12px; color:#bdc3c7;">🔒 未解鎖</span>`;
-        list.innerHTML += `
-            <li style="padding: 8px 10px;">
-                <div style="display:flex; align-items:center; gap:10px;"><span style="font-size:24px;">${acc.icon}</span><span style="font-weight:bold; font-size:14px; ${!acc.isOwned ? 'color:#bdc3c7;' : ''}">${acc.name}</span></div>
-                <div>${statusHtml}</div>
-            </li>`;
-    });
-}
-
-function addAccessoryToCat(id) {
-    const acc = accessories.find(a => a.id === id);
-    if (!acc || !acc.isOwned) return;
-    const newAccessory = {
-        mapId: Date.now(),
-        icon: acc.icon,
-        attachedTo: myCatName,
-        offsetX: (Math.random() * 40 - 20), 
-        offsetY: -40 + (Math.random() * 10)
-    };
-    wornAccessoriesOnMap.push(newAccessory);
-    renderAccessoriesOnMap();
-    toggleModal('modal-bag');
-}
-
-function renderAccessoriesOnMap() {
-    const mapContent = document.getElementById("map-content");
-    if (!mapContent) return;
-    document.querySelectorAll('.map-accessory').forEach(el => el.remove());
-    wornAccessoriesOnMap.forEach(acc => {
-        const el = document.createElement("div");
-        el.className = "map-accessory";
-        el.innerText = acc.icon;
-        const cat = catsData[acc.attachedTo];
-        el.style.cssText = `position: absolute; left: ${cat.x + acc.offsetX}px; top: ${cat.y + acc.offsetY}px; font-size: 32px; cursor: grab; z-index: 7; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3)); user-select: none; transition: left 0.5s linear, top 0.5s linear;`;
-        el.dataset.mapId = acc.mapId;
-        el.addEventListener("mousedown", startDragAccessory);
-        el.addEventListener("touchstart", startDragAccessory, { passive: false });
-        mapContent.appendChild(el);
-    });
-}
-
-// 拖曳飾品
-let draggingAcc = null, accDragStartX = 0, accDragStartY = 0, accStartLeft = 0, accStartTop = 0;
-function startDragAccessory(e) {
-    e.stopPropagation(); e.preventDefault();
-    draggingAcc = e.target; draggingAcc.style.cursor = "grabbing"; draggingAcc.style.transition = "none";
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX, clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    accDragStartX = clientX; accDragStartY = clientY;
-    accStartLeft = parseFloat(draggingAcc.style.left) || 0; accStartTop = parseFloat(draggingAcc.style.top) || 0;
-    document.addEventListener("mousemove", dragAccessory);
-    document.addEventListener("touchmove", dragAccessory, { passive: false });
-    document.addEventListener("mouseup", stopDragAccessory);
-    document.addEventListener("touchend", stopDragAccessory);
-}
-function dragAccessory(e) {
-    if (!draggingAcc) return;
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX, clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    draggingAcc.style.left = `${accStartLeft + (clientX - accDragStartX) / zoomLevel}px`;
-    draggingAcc.style.top = `${accStartTop + (clientY - accDragStartY) / zoomLevel}px`;
-}
-function stopDragAccessory() {
-    if (!draggingAcc) return;
-    const mapId = parseInt(draggingAcc.dataset.mapId);
-    const accData = wornAccessoriesOnMap.find(a => a.mapId === mapId);
-    if (accData) {
-        const cat = catsData[accData.attachedTo];
-        accData.offsetX = parseFloat(draggingAcc.style.left) - cat.x;
-        accData.offsetY = parseFloat(draggingAcc.style.top) - cat.y;
-    }
-    draggingAcc.style.cursor = "grab"; draggingAcc.style.transition = "left 0.5s linear, top 0.5s linear"; draggingAcc = null;
-    document.removeEventListener("mousemove", dragAccessory); document.removeEventListener("touchmove", dragAccessory);
-    document.removeEventListener("mouseup", stopDragAccessory); document.removeEventListener("touchend", stopDragAccessory);
-}
-
-// 讓飾品跟著貓咪移動 (在 centerMapOnPlayer 最後呼叫)
-function updateAccessoriesPosition() {
-    document.querySelectorAll('.map-accessory').forEach(el => {
-        const mapId = parseInt(el.dataset.mapId);
-        const accData = wornAccessoriesOnMap.find(a => a.mapId === mapId);
-        if (accData) {
-            const cat = catsData[accData.attachedTo];
-            el.style.left = `${cat.x + accData.offsetX}px`;
-            el.style.top = `${cat.y + accData.offsetY}px`;
-        }
-    });
-}
-
-// ==================== 服裝店購買系統 ====================
-function openClothingStore() {
-    document.getElementById("store-fish-count").innerText = playerBag["小魚乾"] || 0;
-    renderStoreList();
-    toggleModal('modal-store');
-}
-
-function renderStoreList() {
-    const list = document.getElementById("store-list");
-    if (!list) return;
-    list.innerHTML = "";
-    accessories.forEach(acc => {
-        let statusHtml = acc.isOwned 
-            ? `<span style="font-size:12px; color:#27ae60;">✔ 已擁有</span>`
-            : `<button onclick="buyAccessory('${acc.id}')" style="padding: 4px 8px; font-size:12px; border:1px solid #e67e22; border-radius:4px; background:#f39c12; color:white;">🐟 5 小魚乾</button>`;
-        list.innerHTML += `
-            <li style="padding: 8px 10px;">
-                <div style="display:flex; align-items:center; gap:10px;"><span style="font-size:24px;">${acc.icon}</span><span style="font-weight:bold; font-size:14px; ${!acc.isOwned ? 'color:#7f8c8d;' : ''}">${acc.name}</span></div>
-                <div>${statusHtml}</div>
-            </li>`;
-    });
-}
-
-function buyAccessory(id) {
-    const acc = accessories.find(a => a.id === id);
-    if (!acc || acc.isOwned) return;
-    const isTw = currentLang === 'tw';
-    if ((playerBag["小魚乾"] || 0) < 5) {
-        alert(isTw ? "小魚乾不足！需要 5 個小魚乾才能購買喔。" : "小鱼干不足！需要 5 个小鱼干才能购买喔。");
-        return;
-    }
-    playerBag["小魚乾"] -= 5;
-    acc.isOwned = true;
-    renderBag(); 
-    renderStoreList();
-    document.getElementById("store-fish-count").innerText = playerBag["小魚乾"];
-    alert(isTw ? `🎉 成功購買 ${acc.name}！` : `🎉 成功购买 ${acc.name}！`);
-}
-    // ==================== 各店長專屬裝修小遊戲 ====================
-let miniGameCurrentDay = 1;
-let miniEmptySlots = [];
-let miniItems = [];
-let miniDraggedItem = null;
-let miniOffsetX = 0, miniOffsetY = 0;
-let currentWorkingShop = "";
-const miniCanvas = document.getElementById('mini-game-canvas');
-const miniCtx = miniCanvas.getContext('2d');
-
-function tryEnterShop(ownerName, shopName) {
-    const isTw = currentLang === 'tw';
-    const title = document.getElementById("shop-work-title");
-    const desc = document.getElementById("shop-work-desc");
-    const btn = document.getElementById("shop-work-btn");
-
-    title.innerText = `🏪 ${shopName}`;
-    
-    if (myCatName === ownerName) {
-        desc.innerText = isTw ? "歡迎回來，店長！今天要整理些什麼呢？" : "欢迎回来，店长！今天要整理些什么呢？";
-        btn.style.display = "inline-block";
-        currentWorkingShop = ownerName; 
-    } else {
-        desc.innerText = isTw ? `這裡是 ${ownerName} 的店，目前尚未營業...` : `这里是 ${ownerName} 的店，目前尚未营业...`;
-        btn.style.display = "none";
-    }
-    toggleModal('modal-shop-work');
-}
-
-function startMiniGame() {
-    toggleModal('modal-shop-work');
-    document.getElementById('mini-game-overlay').style.display = 'flex';
-    
-    miniCanvas.width = window.innerWidth;
-    miniCanvas.height = window.innerHeight;
-    
-    if (currentWorkingShop === "哈基游") document.getElementById('mini-day-title').innerText = "甜品店 - 佈置店鋪";
-    else if (currentWorkingShop === "哈基心") document.getElementById('mini-day-title').innerText = "玩具店 - 整理貨架";
-    else document.getElementById('mini-day-title').innerText = "店鋪裝修";
-
-    miniGameCurrentDay = 1;
-    setupMiniLevel(miniGameCurrentDay);
-    drawMiniGame();
-}
-
-function closeMiniGame() {
-    document.getElementById('mini-game-overlay').style.display = 'none';
-}
-
-function createSlot(x, y, w, h) { return { x, y, w, h, isFilled: false }; }
-function createItem(x, y, w, h, color, name) { return { x, y, w, h, color, name }; }
-
-function setupMiniLevel(day) {
-    miniEmptySlots = [];
-    miniItems = [];
-    miniDraggedItem = null;
-    const cx = miniCanvas.width / 2;
-    const cy = miniCanvas.height / 2;
-
-    let shopItem = "商品";
-    if (currentWorkingShop === "哈基游") shopItem = "甜點";
-    else if (currentWorkingShop === "哈基心") shopItem = "玩具";
-    else if (currentWorkingShop === "哈基之") shopItem = "衣服";
-    else if (currentWorkingShop === "哈基芝") shopItem = "奶茶";
-    else if (currentWorkingShop === "哈基桐") shopItem = "畫作";
-    else if (currentWorkingShop === "哈基悠") shopItem = "化妝品";
-    else if (currentWorkingShop === "哈基慈") shopItem = "書本";
-    else if (currentWorkingShop === "哈基一") shopItem = "咖啡";
-    else if (currentWorkingShop === "哈基琪") shopItem = "公仔";
-    else if (currentWorkingShop === "哈基晴") shopItem = "用品";
-    else if (currentWorkingShop === "哈基姿") shopItem = "水果";
-
-    if (day === 1) {
-        document.getElementById('mini-day-title').innerText = "第一天：佈置店外";
-        document.getElementById('mini-task-text').innerText = "把兩盆植物拖到門口的灰色空位";
-        miniEmptySlots.push(createSlot(cx - 120, cy + 50, 60, 60));
-        miniEmptySlots.push(createSlot(cx + 60, cy + 50, 60, 60));
-        miniItems.push(createItem(50, miniCanvas.height - 100, 60, 60, '#4CAF50', '盆栽'));
-        miniItems.push(createItem(150, miniCanvas.height - 100, 60, 60, '#81C784', '盆栽'));
-    } else if (day === 2) {
-        document.getElementById('mini-day-title').innerText = `第二天：${shopItem}貨櫃1`;
-        document.getElementById('mini-task-text').innerText = `把${shopItem}放進左邊貨架`;
-        for (let i = 0; i < 3; i++) miniEmptySlots.push(createSlot(cx - 150 + i * 70, cy - 50, 60, 60));
-        miniItems.push(createItem(50, miniCanvas.height - 100, 60, 60, '#FF9800', shopItem));
-        miniItems.push(createItem(150, miniCanvas.height - 100, 60, 60, '#F44336', shopItem));
-        miniItems.push(createItem(250, miniCanvas.height - 100, 60, 60, '#E91E63', shopItem));
-    } else if (day === 3) {
-        document.getElementById('mini-day-title').innerText = `第三天：${shopItem}收銀台`;
-        document.getElementById('mini-task-text').innerText = `把包裝和${shopItem}放到收銀台`;
-        miniEmptySlots.push(createSlot(cx - 50, cy + 20, 50, 50));
-        miniEmptySlots.push(createSlot(cx + 20, cy + 20, 50, 50));
-        miniItems.push(createItem(50, miniCanvas.height - 100, 50, 50, '#795548', '紙袋'));
-        miniItems.push(createItem(150, miniCanvas.height - 100, 50, 50, '#00BCD4', shopItem));
-    } else if (day === 4) {
-        document.getElementById('mini-day-title').innerText = `第四天：${shopItem}貨櫃2`;
-        document.getElementById('mini-task-text').innerText = `把${shopItem}放進右邊貨架`;
-        for (let i = 0; i < 3; i++) miniEmptySlots.push(createSlot(cx + 50 + i * 70, cy - 50, 60, 60));
-        miniItems.push(createItem(50, miniCanvas.height - 100, 60, 60, '#03A9F4', shopItem));
-        miniItems.push(createItem(150, miniCanvas.height - 100, 60, 60, '#CDDC39', shopItem));
-        miniItems.push(createItem(250, miniCanvas.height - 100, 60, 60, '#9C27B0', shopItem));
-    } else if (day === 5) {
-        document.getElementById('mini-day-title').innerText = "第五天：綜合大挑戰！";
-        document.getElementById('mini-task-text').innerText = `把所有${shopItem}和植物放回原位！`;
-        miniEmptySlots.push(createSlot(cx - 150, cy + 80, 60, 60));
-        miniEmptySlots.push(createSlot(cx - 120, cy - 50, 60, 60));
-        miniEmptySlots.push(createSlot(cx + 50, cy + 20, 50, 50));
-        miniItems.push(createItem(50, miniCanvas.height - 100, 60, 60, '#4CAF50', '盆栽'));
-        miniItems.push(createItem(150, miniCanvas.height - 100, 60, 60, '#FF9800', shopItem));
-        miniItems.push(createItem(250, miniCanvas.height - 100, 50, 50, '#795548', '紙袋'));
-    }
-    document.getElementById('mini-game-msg').style.display = 'none';
-}
-
-function drawMiniGame() {
-    miniCtx.clearRect(0, 0, miniCanvas.width, miniCanvas.height);
-    const cx = miniCanvas.width / 2;
-    const cy = miniCanvas.height / 2;
-
-    if (miniGameCurrentDay === 1 || miniGameCurrentDay === 5) {
-        miniCtx.fillStyle = '#f8bbd0'; miniCtx.fillRect(cx - 150, cy - 150, 300, 200);
-        miniCtx.fillStyle = '#b71c1c'; miniCtx.beginPath(); miniCtx.moveTo(cx - 170, cy - 150); miniCtx.lineTo(cx, cy - 250); miniCtx.lineTo(cx + 170, cy - 150); miniCtx.fill();
-        miniCtx.fillStyle = '#8d6e63'; miniCtx.fillRect(cx - 40, cy - 50, 80, 100);
-    } else {
-        miniCtx.fillStyle = '#d7ccc8'; miniCtx.fillRect(0, 0, miniCanvas.width, miniCanvas.height);
-        miniCtx.fillStyle = '#a1887f'; miniCtx.fillRect(cx - 200, cy - 100, 150, 150); miniCtx.fillRect(cx + 50, cy - 100, 150, 150); miniCtx.fillRect(cx - 80, cy + 50, 160, 50);
-    }
-
-    miniEmptySlots.forEach(slot => {
-        if (!slot.isFilled) {
-            miniCtx.fillStyle = 'rgba(100, 100, 100, 0.3)'; miniCtx.fillRect(slot.x, slot.y, slot.w, slot.h);
-            miniCtx.strokeStyle = 'rgba(255, 255, 255, 0.8)'; miniCtx.setLineDash([5, 5]); miniCtx.strokeRect(slot.x, slot.y, slot.w, slot.h); miniCtx.setLineDash([]);
-        }
-    });
-
-    miniItems.sort((a, b) => a.y - b.y);
-    miniItems.forEach(item => {
-        miniCtx.fillStyle = 'rgba(0,0,0,0.2)'; miniCtx.fillRect(item.x + 5, item.y + item.h - 5, item.w, 10);
-        miniCtx.fillStyle = item.color; miniCtx.fillRect(item.x, item.y, item.w, item.h);
-        miniCtx.fillStyle = '#fff'; miniCtx.font = '12px sans-serif'; miniCtx.textAlign = 'center'; miniCtx.fillText(item.name, item.x + item.w / 2, item.y + item.h / 2 + 4);
-    });
-}
-
-function miniGetPos(e) {
-    const rect = miniCanvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return { x: clientX - rect.left, y: clientY - rect.top };
-}
-
-function miniHandleStart(e) {
-    if (e.target !== miniCanvas) return;
-    e.preventDefault();
-    const pos = miniGetPos(e);
-    for (let i = miniItems.length - 1; i >= 0; i--) {
-        let item = miniItems[i];
-        if (pos.x > item.x && pos.x < item.x + item.w && pos.y > item.y && pos.y < item.y + item.h) {
-            miniDraggedItem = item; miniOffsetX = pos.x - item.x; miniOffsetY = pos.y - item.y; break;
-        }
-    }
-}
-
-function miniHandleMove(e) {
-    if (!miniDraggedItem) return;
-    e.preventDefault();
-    const pos = miniGetPos(e);
-    miniDraggedItem.x = pos.x - miniOffsetX;
-    miniDraggedItem.y = pos.y - miniOffsetY;
-    drawMiniGame();
-}
-
-function miniHandleEnd(e) {
-    if (!miniDraggedItem) return;
-    e.preventDefault();
-    const centerX = miniDraggedItem.x + miniDraggedItem.w / 2;
-    const centerY = miniDraggedItem.y + miniDraggedItem.h / 2;
-    let placed = false;
-
-    miniEmptySlots.forEach(slot => {
-        if (!slot.isFilled && centerX > slot.x && centerX < slot.x + slot.w && centerY > slot.y && centerY < slot.y + slot.h) {
-            miniDraggedItem.x = slot.x + (slot.w - miniDraggedItem.w) / 2;
-            miniDraggedItem.y = slot.y + (slot.h - miniDraggedItem.h) / 2;
-            slot.isFilled = true; placed = true;
-        }
-    });
-
-    if (!placed) {
-        miniDraggedItem.x = Math.max(50, miniDraggedItem.x);
-        miniDraggedItem.y = miniCanvas.height - 100;
-    }
-
-    miniDraggedItem = null;
-    drawMiniGame();
-    checkMiniLevelComplete();
-}
-
-function checkMiniLevelComplete() {
-    const allFilled = miniEmptySlots.every(slot => slot.isFilled);
-    if (allFilled) {
-        document.getElementById('mini-game-msg').style.display = 'block';
-        const isTw = currentLang === 'tw';
-        
-        setTimeout(() => {
-            if (miniGameCurrentDay < 5) {
-                let reward = (miniGameCurrentDay === 1) ? 5 : 2;
-                playerBag["小魚乾"] = (playerBag["小魚乾"] || 0) + reward;
-                renderBag();
-                alert(isTw ? `🎉 完成第 ${miniGameCurrentDay} 天裝修！\n獲得小魚乾 x${reward}！` : `🎉 完成第 ${miniGameCurrentDay} 天装修！\n获得小鱼干 x${reward}！`);
-
-                miniGameCurrentDay++;
-                setupMiniLevel(miniGameCurrentDay);
-                drawMiniGame();
+            if (distance < speed) {
+                player.x = targetX; player.y = targetY;
+                el.style.left = `${player.x}px`;
+                el.style.top = `${player.y}px`;
+                stopPlayerMove();
             } else {
-                playerBag["小魚乾"] = (playerBag["小魚乾"] || 0) + 5;
-                renderBag();
-                alert(isTw ? `🏆 太棒了！你完美完成了五天的店鋪裝修挑戰！\n\n獲得最終大獎：小魚乾 x5！` : `🏆 太棒了！你完美完成了五天的店铺装修挑战！\n\n获得最终大奖：小鱼干 x5！`);
-                closeMiniGame();
+                player.x += (dx / distance) * speed;
+                player.y += (dy / distance) * speed;
+                el.style.left = `${player.x}px`;
+                el.style.top = `${player.y}px`;
+                centerMapOnPlayer();
             }
-        }, 1500);
+        }, 30);
     }
-}
 
-miniCanvas.addEventListener('mousedown', miniHandleStart);
-miniCanvas.addEventListener('mousemove', miniHandleMove);
-miniCanvas.addEventListener('mouseup', miniHandleEnd);
-miniCanvas.addEventListener('touchstart', miniHandleStart, { passive: false });
-miniCanvas.addEventListener('touchmove', miniHandleMove, { passive: false });
-miniCanvas.addEventListener('touchend', miniHandleEnd, { passive: false });
-    // ==================== 首領貓咪編輯器 ====================
-let isEditCatMode = false;
-let draggingCat = null;
-let catDragStartX = 0, catDragStartY = 0, catStartLeft = 0, catStartTop = 0;
-
-function toggleCatEditor() {
-    isEditCatMode = !isEditCatMode;
-    isAiPaused = isEditCatMode; 
-    const btn = document.getElementById("btn-edit-cat");
-    
-    if (isEditCatMode) {
-        btn.innerText = "❌ 關閉貓咪編輯";
-        btn.style.background = "#e67e22";
-        btn.style.color = "white";
-        
-        // 👇 加入這行：開啟時自動把視野拉到整座島
-        zoomToIsland(); 
-        
-        alert("🐾 貓咪編輯模式已開啟！\n請直接在地圖上『拖曳』貓咪來改變牠們的位置。");
-    } else {
-        btn.innerText = "開啟貓咪編輯模式";
-        btn.style.background = "white";
-        btn.style.color = "#e67e22";
-        saveCatPositions(); 
-        alert("✅ 貓咪編輯模式已關閉，位置已儲存！");
-    }
-    toggleModal('modal-admin');
-}
-    // 👇 新增：自動把視野拉到看見整座島的函數
-function zoomToIsland() {
+    function manualZoom(dir) {
     const area = document.getElementById("map-area");
-    const mapContent = document.getElementById("map-content");
+    const minZoom = Math.min(area.clientWidth / MAP_WIDTH, area.clientHeight / MAP_HEIGHT) * 0.9;
     
-    // 計算能塞下 4000x2000 地圖的最小縮放比例
-    const scaleX = area.clientWidth / MAP_WIDTH;
-    const scaleY = area.clientHeight / MAP_HEIGHT;
-    // 取較小的比例，並預留一點邊距 (乘以 0.9)
-    zoomLevel = Math.min(scaleX, scaleY) * 0.9;
+    if (dir > 0) zoomLevel = Math.min(zoomLevel + 0.2, 3);
+    else zoomLevel = Math.max(zoomLevel - 0.2, minZoom);
     
-    // 把地圖中心點移到畫面正中央
-    const centerX = area.clientWidth / 2;
-    const centerY = area.clientHeight / 2;
-    const translateX = centerX - (MAP_WIDTH / 2) * zoomLevel;
-    const translateY = centerY - (MAP_HEIGHT / 2) * zoomLevel;
-    
-    mapContent.style.transform = `translate(${translateX}px, ${translateY}px) scale(${zoomLevel})`;
-    
-    // 更新飾品跟隨
-    updateAccessoriesPosition();
-}
-
-// 綁定貓咪的拖曳事件（在生成貓咪時呼叫）
-function bindCatDragEvents(el) {
-    el.addEventListener("mousedown", startDragCat);
-    el.addEventListener("touchstart", startDragCat, { passive: false });
-}
-
-function startDragCat(e) {
-    if (!isEditCatMode) return; // 如果沒開編輯模式，就不理他
-    
-    e.stopPropagation(); 
-    e.preventDefault();
-    
-    draggingCat = e.currentTarget;
-    draggingCat.style.cursor = "grabbing";
-    
-    // 取消原本的 CSS transition，拖曳才會順暢
-    draggingCat.style.transition = "none"; 
-
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    
-    catDragStartX = clientX;
-    catDragStartY = clientY;
-    catStartLeft = parseFloat(draggingCat.style.left) || 0;
-    catStartTop = parseFloat(draggingCat.style.top) || 0;
-
-    document.addEventListener("mousemove", dragCat);
-    document.addEventListener("touchmove", dragCat, { passive: false });
-    document.addEventListener("mouseup", stopDragCat);
-    document.addEventListener("touchend", stopDragCat);
-}
-
-function dragCat(e) {
-    if (!draggingCat) return;
-    
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    
-    const deltaX = (clientX - catDragStartX) / zoomLevel;
-    const deltaY = (clientY - catDragStartY) / zoomLevel;
-    
-    let newLeft = catStartLeft + deltaX;
-    let newTop = catStartTop + deltaY;
-
-    // 邊界限制 (不要拖到海裡)
-    const buffer = 50;
-    newLeft = Math.max(buffer, Math.min(newLeft, MAP_WIDTH - CAT_SIZE - buffer));
-    newTop = Math.max(buffer, Math.min(newTop, MAP_HEIGHT - CAT_SIZE - buffer));
-
-    draggingCat.style.left = `${newLeft}px`;
-    draggingCat.style.top = `${newTop}px`;
-}
-
-function stopDragCat() {
-    if (!draggingCat) return;
-    
-    draggingCat.style.cursor = "pointer";
-    draggingCat.style.transition = "top 0.5s linear, left 0.5s linear";
-    
-    // 更新資料庫的座標
-    const catName = draggingCat.id.replace("cat-", "");
-    if (catsData[catName]) {
-        catsData[catName].x = parseFloat(draggingCat.style.left);
-        catsData[catName].y = parseFloat(draggingCat.style.top);
+    centerMapOnPlayer();
     }
 
-    draggingCat = null;
-    
-    document.removeEventListener("mousemove", dragCat);
-    document.removeEventListener("touchmove", dragCat);
-    document.removeEventListener("mouseup", stopDragCat);
-    document.removeEventListener("touchend", stopDragCat);
-}
+    // ==================== 語言切換 ====================
+    function toggleLang() {
+        const btn = document.getElementById("btn-lang");
+        currentLang = currentLang === 'tw' ? 'cn' : 'tw';
+        const isTw = currentLang === 'tw';
 
-// 儲存貓咪位置到瀏覽器
-function saveCatPositions() {
-    const positions = {};
-    for (let name in catsData) {
-        positions[name] = { x: catsData[name].x, y: catsData[name].y };
-    }
-    localStorage.setItem("catPlanetCatPositions", JSON.stringify(positions));
-}
+        btn.innerText = isTw ? "简体中文" : "繁體中文";
+        document.getElementById("announcement-text").innerText = isTw ? "歡迎來到哈基咪星球！" : "欢迎来到哈基咪星球！";
+        document.getElementById("wake-text").innerText = isTw ? "歡迎來到哈基米星球～隨便玩樂吧～" : "欢迎来到哈基米星球～随便玩乐吧～";
+        
+        // 切換店鋪文字
+        document.querySelectorAll('.building-text').forEach(el => {
+            el.innerText = isTw ? el.getAttribute('data-tw') : el.getAttribute('data-cn');
+        });
 
-// 載入貓咪位置
-function loadCatPositions() {
-    const saved = localStorage.getItem("catPlanetCatPositions");
-    if (!saved) return;
-    const positions = JSON.parse(saved);
-    for (let name in positions) {
-        if (catsData[name]) {
-            catsData[name].x = positions[name].x;
-            catsData[name].y = positions[name].y;
-        }
+        // 重新渲染選角畫面以切換職位
+        renderSelectGrid();
     }
-}
 </script>
 </body>
 </html>
