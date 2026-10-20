@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🪐 哈基咪星球 🪐</title>
+    <style>
+        /* ========== 全局樣式 ========== */
+        body { background-color: #f7f9fa; color: #2c3e50; font-family: 'Courier New', Courier, monospace, "微軟正黑體"; margin: 0; padding: 0; overflow: hidden; }
+        h1, h2, h3 { margin: 5px 0; }
+        button { font-family: inherit; font-weight: bold; cursor: pointer; border-radius: 4px; transition: 0.2s; }
+        button:hover { background-color: #2c3e50 !important; color: white !important; }
+        .hidden { display: none !important; }
+
+        /* ========== 首頁與選角 ========== */
+        #screen-start, #screen-select { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f7f9fa; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .btn-main { padding: 15px 40px; font-size: 20px; background: white; border: 3px solid #2c3e50; box-shadow: 5px 5px 0px #2c3e50; margin-top: 20px; }
+        .select-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; max-height: 70vh; overflow-y: auto; padding: 20px; background: white; border: 3px solid #2c3e50; border-radius: 8px; margin-top: 20px; }
+        .select-card { border: 2px solid #2c3e50; border-radius: 6px; padding: 10px; background: #f8f9fa; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; align-items: center; }
+        .select-card:hover { transform: scale(1.05); background: #e2e7ea; }
+        .select-card img { width: 100%; height: 100px; object-fit: contain; animation: floatIdle 2s infinite ease-in-out; }
+        .select-card .name { font-weight: bold; margin-top: 5px; }
+        .select-card .duty { font-size: 11px; color: #7f8c8d; }
+
+        /* ========== 開場過場動畫 ========== */
+        #screen-transition { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 10001; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #2c3e50; }
+        .cushion { width: 200px; height: 80px; background: #8e44ad; border-radius: 50%; position: relative; display: flex; justify-content: center; align-items: center; border: 4px solid #2c3e50; }
+        .wake-cat { width: 140px; height: 140px; position: absolute; bottom: 20px; opacity: 0; transform: rotate(-90deg); transition: opacity 0.5s; object-fit: contain; filter: drop-shadow(0px 10px 15px rgba(0,0,0,0.2)); }
+        .wake-cat.awake { opacity: 1; animation: jumpTwice 1.5s ease-in-out forwards; }
+        .wake-text { margin-top: 30px; font-size: 22px; opacity: 0; transition: opacity 1s; font-weight: bold; color: #f39c12; }
+
+        @keyframes jumpTwice {
+            0% { transform: translateY(0) scale(1); }
+            20% { transform: translateY(-40px) scale(1.1); }
+            40% { transform: translateY(0) scale(0.9); }
+            60% { transform: translateY(-40px) scale(1.1); }
+            80% { transform: translateY(0) scale(0.9); }
+            100% { transform: translateY(0) scale(1); }
+        }
+        @keyframes floatIdle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        /* ========== 遊戲主介面 ========== */
+        #game-container { display: none; width: 100vw; height: 100vh; position: relative; }
+        .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background: white; border-bottom: 3px solid #2c3e50; position: relative; z-index: 10; height: 55px; box-sizing: border-box;}
+        .server-announcement { font-size: 14px; color: #e74c3c; font-weight: bold; }
+        .nav-btns button { border: 2px solid #2c3e50; background: white; padding: 5px 10px; margin-left: 5px; font-size: 13px; }
+
+        /* 地圖外層（海洋） */
+        #map-area { position: absolute; top: 0; bottom: 0; left: 0; right: 0; overflow: hidden; cursor: crosshair; background-color: #a2d9ff; background-image: url("data:image/svg+xml,%3Csvg width='200' height='40' viewBox='0 0 200 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 20 Q 50 40 100 20 T 200 20' stroke='%23ffffff' stroke-width='3' fill='none' fill-opacity='0.3' stroke-opacity='0.4'/%3E%3C/svg%3E"); background-size: 200px 40px; animation: seaWave 15s linear infinite; }
+        @keyframes seaWave { 0% { background-position: 0 0; } 100% { background-position: 200px 0; } }
+
+        /* 地圖內層（綠色小島） */
+        #map-content { position: absolute; width: 4000px; height: 4500px; transform-origin: 0 0; transition: transform 0.2s ease-out; border: 5px solid #2c3e50; box-shadow: inset 0 0 20px rgba(44, 62, 80, 0.1); background-color: #e8f5e9; background-image: radial-gradient(#b2dfdb 2px, transparent 0); } 
+        
+        /* 建築與地板 */
+        .building { position: absolute; box-sizing: border-box; background-color: transparent; border: none; font-weight: bold; text-align: center; cursor: pointer; user-select: none; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 600px; height: 600px; padding: 20px; transition: transform 0.2s; }
+        .building:hover { transform: scale(1.05) translateY(-8px); }
+        .building-img { width: 440px; height: 440px; background-size: contain; background-position: center; background-repeat: no-repeat; margin-bottom: 20px; }
+        .building-text { font-size: 44px; font-weight: bold; color: #2c3e50; line-height: 1.2; background: rgba(255, 255, 255, 0.8); padding: 10px 20px; border-radius: 12px; text-shadow: 2px 2px 0px white; }
+
+        /* 貓咪角色 */
+        .cat-avatar { position: absolute; width: 100px; height: 100px; transition: top 0.5s linear, left 0.5s linear; cursor: pointer; z-index: 5; display: flex; justify-content: center; align-items: flex-end; }
+        .cat-img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0px 5px 2px rgba(0,0,0,0.2)); }
+        .cat-name-tag { position: absolute; top: -25px; background: rgba(255,255,255,0.9); border: 1px solid #2c3e50; border-radius: 10px; padding: 2px 8px; font-size: 12px; font-weight: bold; white-space: nowrap; pointer-events: none; transform: none !important; }
+        .facing-right .cat-img { transform: scaleX(-1) !important; }
+
+        /* 縮放按鈕 */
+        .zoom-controls { position: fixed; right: 20px; bottom: 30px; display: flex; flex-direction: column; gap: 10px; z-index: 99999; }
+        .zoom-controls button { width: 40px; height: 40px; font-size: 20px; background: white; border: 2px solid #2c3e50; border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: 2px 2px 0px #2c3e50; }
+        
+        @media screen and (max-width: 768px) {
+            .top-nav { flex-direction: column; padding: 5px 10px; gap: 5px; }
+            .select-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; width: 95%; padding: 10px; }
+            .modal { width: 90%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. 首頁 -->
+    <div id="screen-start">
+        <h1>🪐 哈基咪星球 🪐</h1>
+        <p style="color:#7f8c8d; font-weight:bold;">一個純貓手繪線條烏托邦</p>
+        <button class="btn-main" onclick="showSelectScreen()">進入遊戲</button>
+        <p style="font-size: 12px; color: #95a5a6; margin-top: 40px; max-width: 80%; line-height: 1.5;">※ 本遊戲為非商業性個人學習與朋友交流專案，其中貓咪圖片素材版權歸原遊戲原作者所有。</p>
+    </div>
+
+    <!-- 2. 選角畫面 -->
+    <div id="screen-select" class="hidden">
+        <h2 id="select-title">請選擇你要扮演的貓咪</h2>
+        <div class="select-grid" id="select-grid"></div>
+    </div>
+
+    <!-- 3. 過場動畫 -->
+    <div id="screen-transition" class="hidden">
+        <div class="cushion">
+            <img id="transition-cat" class="wake-cat" src="" alt="cat">
+        </div>
+        <div id="wake-text" class="wake-text">歡迎來到哈基米星球～隨便玩樂吧～</div>
+    </div>
+
+    <!-- 4. 遊戲主畫面 -->
+    <div id="game-container">
+        <div style="position: absolute; top: 15px; left: 20px; z-index: 100; display: flex; align-items: center; gap: 15px; background: rgba(255,255,255,0.85); padding: 8px 15px; border-radius: 30px; border: 2px solid #2c3e50; box-shadow: 3px 3px 0px #2c3e50;">
+            <div class="server-announcement" id="announcement-text" style="margin: 0; font-size: 14px; color: #e74c3c; font-weight: bold;">歡迎來到哈基咪星球！</div>
+            <button onclick="toggleLang()" id="btn-lang" style="border: 2px solid #2c3e50; background: white; padding: 4px 10px; font-size: 12px; font-weight: bold; border-radius: 20px; cursor: pointer;">简体中文</button>
+        </div>
+
+        <div id="map-area" onclick="handleMapClick(event)">
+            <div id="map-content">
+                <!-- 第一排 -->
+                <div class="building" style="left: 200px; top: 200px;">
+                    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/7f8ITGyO2eJ3gsirpK-Sj.png');"></div>
+                    <div class="building-text" data-tw="服裝店「貓主子要換衫」" data-cn="服装店「猫主子要换衫」">服裝店「貓主子要換衫」</div>
+                </div>
+                <div class="building" style="left: 1700px; top: 200px;">
+                    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/63uMoWk0J2QYo2r8SlEBh.png');"></div>
+                    <div class="building-text" data-tw="溫馨家園「12」" data-cn="温馨家园「12」">溫馨家園「12」</div>
+                </div>
+                <div class="building" style="left: 3200px; top: 200px;">
+                    <div class="building-img" style="background-image: url('https://i.imgs.ovh/2026/10/20/670e9af00c9efb346c39f9bfe7bc0198.png');"></div>
+                    <div class="building-text" data-tw="奶茶店「喵茶」" data-cn="奶茶店「喵茶」">奶茶店「喵茶」</div>
+                </div>
+
+                <!-- 第二排 -->
+                <div class="building" style="left: 200px; top: 1100px;">
+                    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/pfVMbSE9nMPKCOc5HlEiH.png');"></div>
+                    <div class="building-text" data-tw="貓畫廊「WMG」" data-cn="猫画廊「WMG」">貓畫廊「WMG」</div>
+                </div>
+                <div class="building" style="left: 1700px; top: 1100px;">
+                    <div class="building-img" style="background-image: url('https://m.riyugo.cn/i/2026/10/18/s4hj36.png');"></div>
+                    <div class="building-text" data-tw="中央廣場「水從天上來」" data-cn="中央广场「水从天上来」">中央廣場「水從天上來」</div>
+                </div>
+                <div class="building" style="left: 3200px; top: 1100px;">
+                    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/8j_eqwVGOwEaqZV-WA18N.png');"></div>
+                    <div class="building-text" data-tw="玩具店「玩飽你讓你樂在其中榴槤忘返」" data-cn="玩具店「玩饱你让你乐在其中榴莲忘返」">玩具店「玩飽你讓你樂在其中榴槤忘返」</div>
+                </div>
+
+                <!-- 第三排 -->
+                <div class="building" style="left: 900px; top: 2000px;">
+                    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/snTtMwh-3ggf7LM0w0qWy.png');"></div>
+                    <div class="building-text" data-tw="化妝店「公主改造社」" data-cn="化妆店「公主改造社」">化妝店「公主改造社」</div>
+                </div>
+                <div class="building" style="left: 2500px; top: 2000px;">
+                    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/fZLQ5ddwW7n34BHtlLgZo.png');"></div>
+                    <div class="building-text" data-tw="貓咪書店「貓然回首看書」" data-cn="猫咪书店「猫然回首看书」">貓咪書店「貓然回首看書」</div>
+                </div>
+
+                <!-- 第四排 -->
+                <div class="building" style="left: 200px; top: 2900px;">
+                    <div class="building-img" style="background-image: url('https://i.imgs.ovh/2026/10/20/4061fc4650d7145cedde971f7b5c8d4f.png');"></div>
+                    <div class="building-text" data-tw="咖啡廳「老闆不想煮咖啡」" data-cn="咖啡厅「老板不想煮咖啡」">咖啡廳「老闆不想煮咖啡」</div>
+                </div>
+                <div class="building" style="left: 1700px; top: 2900px;">
+                    <div class="building-img" style="background-image: url('https://i.imgs.ovh/2026/10/20/b2c84423d9c6ce3bbc496501c810c268.png');"></div>
+                    <div class="building-text" data-tw="夾公仔店「心心夾子」" data-cn="夹公仔店「心心夹子」">夾公仔店「心心夾子」</div>
+                </div>
+                <div class="building" style="left: 3200px; top: 2900px;">
+                    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/6W4KOIbgcJ9jS2vaYtR9e.png');"></div>
+                    <div class="building-text" data-tw="用品店「M仔严选挑拣纯手工精致精品猫咪用品店」" data-cn="用品店「M仔严选挑拣纯手工精致精品猫咪用品店」">用品店「M仔严选挑拣纯手工精致精品猫咪用品店」</div>
+                </div>
+
+                <!-- 第五排 -->
+                <div class="building" style="left: 900px; top: 3800px;">
+                    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/d_r8rDPeHZBM3A9h_xKAx.png');"></div>
+                    <div class="building-text" data-tw="甜品店「一山甜水」" data-cn="甜品店「一山甜水」">甜品店「一山甜水」</div>
+                </div>
+                <div class="building" style="left: 2500px; top: 3800px;">
+                    <div class="building-img" style="background-image: url('https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/u5I9Mw5F3GSl6hW2NjQk6.png');"></div>
+                    <div class="building-text" data-tw="水果店「果然是你」" data-cn="水果店「果然是你」">水果店「果然是你」</div>
+                </div>
+            </div>
+
+            <div class="zoom-controls">
+                <button onclick="manualZoom(1); event.stopPropagation();">➕</button>
+                <button onclick="manualZoom(-1); event.stopPropagation();">➖</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // ==================== 核心數據 ====================
+    const catImages = {
+        "哈基葵": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/Yj_Y1BPlWxF-m0DrK4jXP.png",
+        "哈基芝": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/2Fa1OkeLH_K7ENSqarb9i.png",
+        "哈基游": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/qyrC5kVgSmxkG-VW7URUC.png",
+        "哈基慈": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/rXTpumF_vy5owCjl0pAtz.png",
+        "哈基琪": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/hwP4AaOZS93uQGFWhQO5q.png",
+        "哈基之": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/rSo2XFUnwcoiSqFI_A8_e.png",
+        "哈基一": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/oVfSmNdUjBDOX8ORkxAaO.png",
+        "哈基姿": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/NjFtN4G5NWqAIxxKMSHl5.png",
+        "哈基桐": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/8HwMFDsm3pFIkuyvYQsLF.png",
+        "哈基晴": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/iGQvNqad3Ro3cm5pJjZEl.png",
+        "哈基悠": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/_eraSmF87FzBfL7JVkvY9.png",
+        "哈基心": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/IfGDftaIFwJPXu9tlWIHU.png"
+    };
+
+    const defaultCatSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M20,60 Q10,30 30,20 Q50,10 70,20 Q90,30 80,60 Q95,80 80,90 Q50,95 20,90 Q5,80 20,60 Z' fill='white' stroke='%232c3e50' stroke-width='5'/><circle cx='40' cy='50' r='4' fill='%232c3e50'/><circle cx='60' cy='50' r='4' fill='%232c3e50'/><path d='M45,60 Q50,65 55,60' fill='none' stroke='%232c3e50' stroke-width='3'/></svg>";
+
+    // 設定所有貓咪初始出生在溫馨家園附近，並用座標錯開避免重疊
+    const baseX = 1700, baseY = 800; 
+    const catsData = {
+        "哈基葵": { breed: "布偶貓", duty: "🏡 家園長", duty_cn: "🏡 家园长", x: baseX, y: baseY, facing: "right" },
+        "哈基芝": { breed: "土耳其安哥拉貓", duty: "🍹 奶茶店長", duty_cn: "🍹 奶茶店长", x: baseX + 120, y: baseY, facing: "left" },
+        "哈基游": { breed: "三花貓", duty: "🍰 甜品店長", duty_cn: "🍰 甜品店长", x: baseX + 240, y: baseY, facing: "right" },
+        "哈基慈": { breed: "委屈喵", duty: "📖 書店長", duty_cn: "📖 书店长", x: baseX, y: baseY + 120, facing: "right" },
+        "哈基琪": { breed: "心心", duty: "🕹️ 夾玩偶店長", duty_cn: "🕹️ 夹玩偶店长", x: baseX + 120, y: baseY + 120, facing: "left" },
+        "哈基之": { breed: "奶牛貓", duty: "🏪 服裝店長", duty_cn: "🏪 服装店长", x: baseX + 240, y: baseY + 120, facing: "right" },
+        "哈基一": { breed: "Ruby", duty: "☕ 咖啡店長", duty_cn: "☕ 咖啡店长", x: baseX, y: baseY + 240, facing: "left" },
+        "哈基姿": { breed: "幸運", duty: "🍎 水果店長", duty_cn: "🍎 水果店长", x: baseX + 120, y: baseY + 240, facing: "right" },
+        "哈基桐": { breed: "拉邦貓", duty: "🖼️ 畫廊店長", duty_cn: "🖼️ 画廊店长", x: baseX + 240, y: baseY + 240, facing: "left" },
+        "哈基晴": { breed: "異國短毛貓", duty: "🛝 用品店長", duty_cn: "🛝 用品店长", x: baseX - 120, y: baseY, facing: "right" },
+        "哈基悠": { breed: "土耳其梵貓", duty: "💄 化妝店長", duty_cn: "💄 化妆店长", x: baseX - 120, y: baseY + 120, facing: "left" },
+        "哈基心": { breed: "伯曼貓", duty: "🧸 玩具店長", duty_cn: "🧸 玩具店长", x: baseX - 120, y: baseY + 240, facing: "right" }
+    };
+
+    // ==================== 全局變數 ====================
+    let myCatName = "";
+    let currentLang = 'tw'; 
+    let zoomLevel = 1;
+    let isWalking = false;
+    let moveInterval = null;
+    const MAP_WIDTH = 4000;
+    const MAP_HEIGHT = 4500;
+    const CAT_SIZE = 80;
+    const SAFE_BUFFER = 10; // 讓貓咪可以靠近邊界，但不會掉進海裡
+
+    // ==================== 初始化與流程 ====================
+    window.onload = function() {
+        currentLang = 'tw';
+        renderSelectGrid();
+    };
+
+    function renderSelectGrid() {
+        const grid = document.getElementById("select-grid");
+        grid.innerHTML = "";
+        document.getElementById("select-title").innerText = currentLang === 'tw' ? "請選擇你要扮演的貓咪" : "请选择你要扮演的猫咪";
+        
+        for (let name in catsData) {
+            const info = catsData[name];
+            const displayDuty = currentLang === 'tw' ? info.duty : info.duty_cn;
+            const imgSrc = catImages[name] || defaultCatSvg;
+            const card = document.createElement("div");
+            card.className = "select-card";
+            card.onclick = () => selectCat(name);
+            card.innerHTML = `
+                <img src="${imgSrc}" alt="${name}">
+                <div class="name">${name}</div>
+                <div class="duty">${displayDuty}</div>
+            `;
+            grid.appendChild(card);
+        }
+    }
+
+    function showSelectScreen() {
+        document.getElementById("screen-start").classList.add("hidden");
+        document.getElementById("screen-select").classList.remove("hidden");
+    }
+
+    function selectCat(name) {
+        myCatName = name;
+        document.getElementById("screen-select").classList.add("hidden");
+        startTransition();
+    }
+
+    function startTransition() {
+        const transScreen = document.getElementById("screen-transition");
+        transScreen.classList.remove("hidden");
+        
+        const tCat = document.getElementById("transition-cat");
+        tCat.src = catImages[myCatName] || defaultCatSvg;
+        tCat.classList.remove("awake"); 
+
+        setTimeout(() => { tCat.classList.add("awake"); }, 500);
+        setTimeout(() => { document.getElementById("wake-text").style.opacity = "1"; }, 1500);
+        setTimeout(() => { 
+            transScreen.classList.add("hidden"); 
+            enterGame(); 
+        }, 3500);
+    }
+
+    function enterGame() {
+        document.getElementById("game-container").style.display = "block";
+        renderMapCats();
+        centerMapOnPlayer();
+    }
+
+    // ==================== 地圖與移動邏輯 ====================
+    function renderMapCats() {
+        const mapContent = document.getElementById("map-content");
+        document.querySelectorAll('.cat-avatar').forEach(el => el.remove());
+
+        for (let name in catsData) {
+            const cat = catsData[name];
+            const el = document.createElement("div");
+            el.className = `cat-avatar facing-${cat.facing}`;
+            el.id = `cat-${name}`;
+            el.style.left = `${cat.x}px`;
+            el.style.top = `${cat.y}px`;
+            
+            const imgSrc = catImages[name] || defaultCatSvg;
+            el.innerHTML = `
+                <div class="cat-name-tag">${name}</div>
+                <img class="cat-img" src="${imgSrc}" alt="${name}" onerror="this.onerror=null; this.src='${defaultCatSvg}';">
+            `;
+            mapContent.appendChild(el);
+        }
+    }
+
+    function centerMapOnPlayer() {
+        const player = catsData[myCatName];
+        const mapContent = document.getElementById("map-content");
+        const area = document.getElementById("map-area");
+        
+        const centerX = area.clientWidth / 2;
+        const centerY = area.clientHeight / 2;
+        const catX = player.x + CAT_SIZE / 2;
+        const catY = player.y + CAT_SIZE / 2;
+
+        mapContent.style.transform = `translate(${centerX - (catX * zoomLevel)}px, ${centerY - (catY * zoomLevel)}px) scale(${zoomLevel})`;
+    }
+
+    function handleMapClick(e) {
+        if (e.target.closest('.cat-avatar') || e.target.closest('.building')) return;
+        
+        const mapContent = document.getElementById("map-content");
+        const rect = mapContent.getBoundingClientRect();
+        
+        const clickX = (e.clientX - rect.left) / zoomLevel;
+        const clickY = (e.clientY - rect.top) / zoomLevel;
+        
+        movePlayerTo(clickX - CAT_SIZE/2, clickY - CAT_SIZE/2);
+    }
+
+    function stopPlayerMove() {
+        if (moveInterval) { clearInterval(moveInterval); moveInterval = null; }
+        isWalking = false;
+    }
+
+    function movePlayerTo(targetX, targetY) {
+        stopPlayerMove();
+        const player = catsData[myCatName];
+        const el = document.getElementById(`cat-${myCatName}`);
+        if (!el) return;
+
+        // 邊界限制：不會掉進海裡 (0~MAP_WIDTH 之間)
+        targetX = Math.max(SAFE_BUFFER, Math.min(targetX, MAP_WIDTH - CAT_SIZE - SAFE_BUFFER));
+        targetY = Math.max(SAFE_BUFFER, Math.min(targetY, MAP_HEIGHT - CAT_SIZE - SAFE_BUFFER));
+
+        if (targetX > player.x) {
+            player.facing = "right";
+            el.className = el.className.replace(/facing-\w+/, 'facing-right');
+        } else {
+            player.facing = "left";
+            el.className = el.className.replace(/facing-\w+/, 'facing-left');
+        }
+
+        const speed = 10;
+        moveInterval = setInterval(() => {
+            const dx = targetX - player.x;
+            const dy = targetY - player.y;
+            const distance = Math.sqrt(dx*dx + dy*dy);
+
+            if (distance < speed) {
+                player.x = targetX; player.y = targetY;
+                el.style.left = `${player.x}px`;
+                el.style.top = `${player.y}px`;
+                stopPlayerMove();
+            } else {
+                player.x += (dx / distance) * speed;
+                player.y += (dy / distance) * speed;
+                el.style.left = `${player.x}px`;
+                el.style.top = `${player.y}px`;
+                centerMapOnPlayer();
+            }
+        }, 30);
+    }
+
+    function manualZoom(dir) {
+    const area = document.getElementById("map-area");
+    const minZoom = Math.min(area.clientWidth / MAP_WIDTH, area.clientHeight / MAP_HEIGHT) * 0.9;
+    
+    if (dir > 0) zoomLevel = Math.min(zoomLevel + 0.2, 3);
+    else zoomLevel = Math.max(zoomLevel - 0.2, minZoom);
+    
+    centerMapOnPlayer();
+    }
+
+    // ==================== 語言切換 ====================
+    function toggleLang() {
+        const btn = document.getElementById("btn-lang");
+        currentLang = currentLang === 'tw' ? 'cn' : 'tw';
+        const isTw = currentLang === 'tw';
+
+        btn.innerText = isTw ? "简体中文" : "繁體中文";
+        document.getElementById("announcement-text").innerText = isTw ? "歡迎來到哈基咪星球！" : "欢迎来到哈基咪星球！";
+        document.getElementById("wake-text").innerText = isTw ? "歡迎來到哈基米星球～隨便玩樂吧～" : "欢迎来到哈基米星球～随便玩乐吧～";
+        
+        // 切換店鋪文字
+        document.querySelectorAll('.building-text').forEach(el => {
+            el.innerText = isTw ? el.getAttribute('data-tw') : el.getAttribute('data-cn');
+        });
+
+        // 重新渲染選角畫面以切換職位
+        renderSelectGrid();
+    }
+</script>
+</body>
+</html>
