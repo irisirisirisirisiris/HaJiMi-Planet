@@ -130,11 +130,48 @@
     0% { transform: scale(0.5); opacity: 0; }
     100% { transform: scale(1); opacity: 1; }
 }
+      /* ========== 拼豆小遊戲 ========== */
+#pixel-game-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh;background: #2c3e50; z-index: 30000; display: none; flex-direction: column; touch-action: none; overflow: hidden; }
+.pixel-canvas-container { flex: 1; position: relative; overflow: hidden; background: #34495e; display: flex; justify-content: center; align-items: center; min-height: 0;padding: 20px;}
+.pixel-header { height: 50px; background: #1a252f; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; color: white; border-bottom: 2px solid #f39c12; }
+.pixel-header button { background: #e74c3c; color: white; border: none; padding: 5px 15px; border-radius: 4px; font-weight: bold; }
+.pixel-canvas-container:active { cursor: grabbing; }
+#pixel-canvas { display: block; background: #ecf0f1; box-shadow: 0 0 20px rgba(0,0,0,0.5); width:100%;max-width:600px;aspect-ratio: 1 / 1;touch-action: none; }
+.pixel-palette { 
+    height: 150px; /* 👈 把高度加高，容納三排顏色 */
+    flex-shrink: 0;
+    background: #1a252f; 
+    display: grid; 
+    grid-template-columns: repeat(8, 1fr); /* 👈 一排 8 個顏色，共 6 排 */
+    gap: 8px; 
+    padding: 10px; 
+    overflow-y: auto; /* 如果螢幕太小可以上下滑動 */
+    border-top: 2px solid #f39c12; 
+    box-sizing: border-box;
+}
+
+.color-btn { 
+    width: 32px;      /* 👈 固定寬度 32px */
+    height: 32px;     /* 👈 固定高度 32px */
+    border-radius: 50%; 
+    border: 2px solid #fff; 
+    cursor: pointer; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5); 
+    transition: transform 0.1s;
+    /* 確保它不會被外層的 flex/grid 撐大 */
+    flex-shrink: 0; 
+}
+
+.color-btn.active { 
+    transform: scale(1.15); 
+    border-color: #f1c40f; 
+    border-width: 3px;
+}
+.pixel-mini-preview { position: absolute; bottom: 20px; right: 20px; width: 100px; height: 100px; background: rgba(255,255,255,0.1); border: 2px dashed #fff; border-radius: 8px; pointer-events: none; }
     </style>
 </head>
 <body>
-
-    <!-- 1. 首頁 -->
+  <!-- 1. 首頁 -->
     <div id="screen-start">
         <h1>🪐 哈基咪星球 🪐</h1>
         <p style="color:#7f8c8d; font-weight:bold;">一個純貓手繪線條烏托邦</p>
@@ -250,9 +287,26 @@
             </div>
         </div>
     </div>
-
+<!-- 拼豆小遊戲 -->
+<div id="pixel-game-overlay">
+    <div class="pixel-header">
+        <h3 style="margin:0; font-size:16px; color:#f39c12;">🎨 名畫拼豆 (雙指縮放/拖曳)</h3>
+        <div>
+            <button onclick="clearPixelCanvas()" style="background:#e67e22;">🧹 清空</button>
+            <button onclick="savePixelArt()" style="background:#27ae60;">✅ 完成</button>
+            <button onclick="closePixelGame()">❌ 離開</button>
+        </div>
+    </div>
+    <div class="pixel-canvas-container" id="pixel-canvas-container">
+        <canvas id="pixel-canvas"></canvas>
+        <canvas id="pixel-mini" class="pixel-mini-preview" width="100" height="100"></canvas>
+    </div>
+    <div class="pixel-palette" id="pixel-palette">
+        <!-- 顏色按鈕由 JS 動態生成 -->
+    </div>
+</div>
 <script>
-    // ==================== 核心數據 ====================
+  // ==================== 核心數據 ====================
     const catImages = {
         "哈基葵": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/Yj_Y1BPlWxF-m0DrK4jXP.png",
         "哈基芝": "https://cdn.html2.link/images/kGW-5UAR0_f8cKIY29vYa/2Fa1OkeLH_K7ENSqarb9i.png",
@@ -360,8 +414,7 @@
             checkShopProximity();
     }
     }
-
-    // ==================== 地圖與移動邏輯 ====================
+  // ==================== 地圖與移動邏輯 ====================
     function renderMapCats() {
         const mapContent = document.getElementById("map-content");
         document.querySelectorAll('.cat-avatar').forEach(el => el.remove());
@@ -533,8 +586,10 @@ function executeEnterShop() {
 
     // ... 下面的 alert 彈窗保留 ...
 
-    // 這裡我們先寫死：點擊按鈕後彈出對應的提示或小遊戲
-    if (shopName.includes("服裝店")) {
+    if (shopName.includes("畫廊") || shopName.includes("画廊")) {
+    openPixelGame();
+    } else if (shopName.includes("服裝店")) {
+    // ...
         alert(isTw ? "👗 進入服裝店！(小遊戲開發中...)" : "👗 进入服装店！(小游戏开发中...)");
     } else if (shopName.includes("溫馨家園") || shopName.includes("温馨家园")) {
         alert(isTw ? "🏚️ 進入鬼屋家園！(鬼屋探索開發中...)" : "🏚️ 进入鬼屋家园！(鬼屋探索开发中...)");
@@ -546,7 +601,219 @@ function executeEnterShop() {
     document.getElementById('enter-shop-btn').style.display = "none";
     currentNearbyShop = null;
 }
+        // ==================== 貓畫廊 - 拼豆小遊戲 ====================
+let pCanvas = document.getElementById('pixel-canvas');
+let pCtx = pCanvas.getContext('2d');
+let miniCanvas = document.getElementById('pixel-mini');
+let miniCtx = miniCanvas.getContext('2d');
+let pContainer = document.getElementById('pixel-canvas-container');
+
+const GRID_SIZE = 32;   // 👈 從 16 改成 32 (格子變多)
+const CELL_SIZE = 20;   // 👈 從 30 改成 20 (格子變小，為了塞下 32x32)
+pCanvas.width = GRID_SIZE * CELL_SIZE;   // 變成 640x640
+pCanvas.height = GRID_SIZE * CELL_SIZE;
+
+let pixelGrid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
+let currentColor = '#e74c3c';
+let pScale = 1;
+let pOffsetX = 0, pOffsetY = 0;
+
+// 48 種豐富顏色
+const paletteColors = [
+    // 紅色系
+    '#ff0000', '#e74c3c', '#c0392b', '#ff7f50', '#ff6347', '#dc143c',
+    // 橘色系
+    '#ffa500', '#e67e22', '#d35400', '#f39c12', '#ff8c00', '#ffd700',
+    // 黃色系
+    '#ffff00', '#f1c40f', '#f9e79f', '#fffacd', '#ffeb3b', '#ffdab9',
+    // 綠色系
+    '#00ff00', '#2ecc71', '#27ae60', '#008000', '#556b2f', '#98fb98',
+    // 藍色系
+    '#0000ff', '#3498db', '#2980b9', '#00ffff', '#87ceeb', '#191970',
+    // 紫色/粉色系
+    '#9b59b6', '#8e44ad', '#ffb6c1', '#ff69b4', '#800080', '#dda0dd',
+    // 棕色/大地色
+    '#8b4513', '#d2b48c', '#a0522d', '#f5deb3', '#cd853f', '#deb887',
+    // 灰黑與白色系
+    '#2c3e50', '#7f8c8d', '#bdc3c7', '#000000', '#ffffff', '#ecf0f1'
+];
+function openPixelGame() {
+    document.getElementById('pixel-game-overlay').style.display = 'flex';
     
+    // 先渲染調色盤與畫布，再延遲一點點計算位置
+    initPalette();
+    drawPixelGrid();
+    
+    setTimeout(() => {
+        centerPixelCanvas();
+    }, 100);
+}
+
+function closePixelGame() {
+    document.getElementById('pixel-game-overlay').style.display = 'none';
+}
+
+function initPalette() {
+    const pal = document.getElementById('pixel-palette');
+    pal.innerHTML = '';
+    paletteColors.forEach(c => {
+        const btn = document.createElement('div');
+        btn.className = `color-btn ${c === currentColor ? 'active' : ''}`;
+        btn.style.backgroundColor = c;
+        btn.onclick = () => {
+            currentColor = c;
+            document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        };
+        pal.appendChild(btn);
+    });
+    // 加入橡皮擦
+    const eraser = document.createElement('div');
+    eraser.className = 'color-btn';
+    eraser.style.background = '#ecf0f1';
+    eraser.style.borderColor = '#e74c3c';
+    eraser.innerHTML = '<span style="color:#e74c3c; font-weight:bold; font-size:20px; line-height:40px; display:block; text-align:center;">🧽</span>';
+    eraser.onclick = () => {
+        currentColor = null;
+        document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+        eraser.classList.add('active');
+    };
+    pal.appendChild(eraser);
+}
+
+function drawPixelGrid() {
+    pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+    
+    // 繪製底色與網格線
+    pCtx.fillStyle = '#ecf0f1';
+    pCtx.fillRect(0, 0, pCanvas.width, pCanvas.height);
+    
+    pCtx.strokeStyle = '#bdc3c7';
+    pCtx.lineWidth = 1;
+    for (let i = 0; i <= GRID_SIZE; i++) {
+        pCtx.beginPath(); pCtx.moveTo(i * CELL_SIZE, 0); pCtx.lineTo(i * CELL_SIZE, pCanvas.height); pCtx.stroke();
+        pCtx.beginPath(); pCtx.moveTo(0, i * CELL_SIZE); pCtx.lineTo(pCanvas.width, i * CELL_SIZE); pCtx.stroke();
+    }
+
+    // 繪製已填色的豆豆
+    for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+            if (pixelGrid[r][c]) {
+                pCtx.fillStyle = pixelGrid[r][c];
+                pCtx.beginPath();
+                pCtx.arc(c * CELL_SIZE + CELL_SIZE/2, r * CELL_SIZE + CELL_SIZE/2, CELL_SIZE/2 - 2, 0, Math.PI * 2);
+                pCtx.fill();
+            }
+        }
+    }
+    drawMiniPreview();
+}
+
+function drawMiniPreview() {
+    miniCtx.clearRect(0, 0, 100, 100);
+    const miniCell = 100 / GRID_SIZE;
+    for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+            if (pixelGrid[r][c]) {
+                miniCtx.fillStyle = pixelGrid[r][c];
+                miniCtx.fillRect(c * miniCell, r * miniCell, miniCell, miniCell);
+            }
+        }
+    }
+}
+
+// Canvas 手勢與縮放控制
+let pIsDragging = false;
+let pStartX, pStartY;
+let pInitialPinchDist = 0;
+
+function centerPixelCanvas() {
+    const rect = pContainer.getBoundingClientRect();
+    pScale = 1; 
+    pOffsetX = (rect.width - pCanvas.width) / 2;
+    pOffsetY = (rect.height - pCanvas.height) / 2;
+    updateCanvasTransform();
+}
+
+function updateCanvasTransform() {
+    pCanvas.style.transform = `translate(${pOffsetX}px, ${pOffsetY}px) scale(${pScale})`;
+    pCanvas.style.transformOrigin = '0 0';
+}
+
+// 滑鼠與觸控事件綁定
+pContainer.addEventListener('mousedown', (e) => {
+    pIsDragging = true; pStartX = e.clientX - pOffsetX; pStartY = e.clientY - pOffsetY;
+});
+pContainer.addEventListener('mousemove', (e) => {
+    if (pIsDragging) { pOffsetX = e.clientX - pStartX; pOffsetY = e.clientY - pStartY; updateCanvasTransform(); }
+});
+pContainer.addEventListener('mouseup', () => pIsDragging = false);
+pContainer.addEventListener('mouseleave', () => pIsDragging = false);
+pContainer.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+    pScale *= zoomFactor;
+    updateCanvasTransform();
+}, { passive: false });
+
+pContainer.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+        pInitialPinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    } else if (e.touches.length === 1) {
+        pIsDragging = true; pStartX = e.touches[0].clientX - pOffsetX; pStartY = e.touches[0].clientY - pOffsetY;
+    }
+}, { passive: false });
+
+pContainer.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2) {
+        e.preventDefault();
+        const currentDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        pScale *= currentDist / pInitialPinchDist;
+        pInitialPinchDist = currentDist;
+        updateCanvasTransform();
+    } else if (e.touches.length === 1 && pIsDragging) {
+        pOffsetX = e.touches[0].clientX - pStartX;
+        pOffsetY = e.touches[0].clientY - pStartY;
+        updateCanvasTransform();
+    }
+}, { passive: false });
+
+pContainer.addEventListener('touchend', () => { pIsDragging = false; });
+
+// 點擊畫布填色
+// 點擊畫布填色
+// ==================== 畫布塗色邏輯 (單點模式) ====================
+pCanvas.addEventListener('click', (e) => {
+    const rect = pCanvas.getBoundingClientRect();
+    // 計算縮放比例，確保精準點擊
+    const scaleX = pCanvas.width / rect.width;
+    const scaleY = pCanvas.height / rect.height;
+    
+    // 取得點擊的座標
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    
+    const col = Math.floor(x / CELL_SIZE);
+    const row = Math.floor(y / CELL_SIZE);
+    
+    // 如果點在範圍內，就上色並重繪
+    if (col >= 0 && col < GRID_SIZE && row >= 0 && row < GRID_SIZE) {
+        pixelGrid[row][col] = currentColor;
+        drawPixelGrid();
+    }
+});
+
+function clearPixelCanvas() {
+    if(confirm("確定要清空拼豆板嗎？")) {
+        pixelGrid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
+        drawPixelGrid();
+    }
+}
+
+function savePixelArt() {
+    alert("🎉 拼豆作品完成！已為您展示於畫廊牆上！");
+    closePixelGame();
+}
 </script>
 </body>
 </html>
